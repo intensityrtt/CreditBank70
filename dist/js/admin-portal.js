@@ -90,6 +90,47 @@ window.AdminPortal = (function() {
     }
   }
 
+  function checkLoginStatus() {
+    var savedToken = sessionStorage.getItem(window.APP_CONFIG.STORAGE_KEYS.ADMIN_TOKEN);
+    var savedPin = sessionStorage.getItem("cb_admin_current_pin");
+    return isLoggedIn || !!(savedToken && savedPin);
+  }
+
+  // แถบเมนูนำทางเฉพาะผู้ดูแลระบบเขต (Admin Navigation Bar)
+  function getAdminNavHtml(activeItem) {
+    return `
+      <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white p-3.5 sm:p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-3 shadow-lg border border-slate-700/50 mb-6 no-print">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-bold shadow-md shrink-0">
+            <i data-lucide="shield-check" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-amber-300">ADMIN CONTROL CENTER</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">เข้าสู่ระบบแล้ว</span>
+            </div>
+            <div class="text-sm font-bold text-white">ระบบจัดการสารสนเทศ Credit Bank (สพป.น่าน เขต 1)</div>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-center gap-2">
+          <button onclick="App.switchTab('admin')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${activeItem === 'admin' ? 'bg-blue-600 text-white shadow-md font-bold ring-2 ring-blue-400/30' : 'bg-white/10 hover:bg-white/20 text-slate-200'}">
+            <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i> ภาพรวม & วิเคราะห์สถิติ
+          </button>
+          <button onclick="App.switchTab('tracker')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${activeItem === 'tracker' ? 'bg-blue-600 text-white shadow-md font-bold ring-2 ring-blue-400/30' : 'bg-white/10 hover:bg-white/20 text-slate-200'}">
+            <i data-lucide="clipboard-check" class="w-3.5 h-3.5"></i> ติดตามความก้าวหน้า 34 รร.
+          </button>
+          <button onclick="App.switchTab('obec-report')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${activeItem === 'obec-report' ? 'bg-blue-600 text-white shadow-md font-bold ring-2 ring-blue-400/30' : 'bg-white/10 hover:bg-white/20 text-slate-200'}">
+            <i data-lucide="file-text" class="w-3.5 h-3.5"></i> ข้อมูลรายงาน สพฐ.
+          </button>
+          <button onclick="AdminPortal.logout()" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-950/60 hover:bg-red-900 text-red-200 transition-all flex items-center gap-1.5 cursor-pointer ml-1 border border-red-800/40">
+            <i data-lucide="log-out" class="w-3.5 h-3.5"></i> ออกจากระบบ
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
   function logout() {
     isLoggedIn = false;
     adminPin = "";
@@ -97,6 +138,7 @@ window.AdminPortal = (function() {
     sessionStorage.removeItem("cb_admin_current_pin");
     renderLogin();
     window.App.showToast("ออกจากระบบผู้ดูแลแล้ว", "info");
+    window.App.switchTab("survey");
   }
 
   async function loadAdminData() {
@@ -139,6 +181,8 @@ window.AdminPortal = (function() {
 
     var html = `
       <div class="space-y-6 max-w-7xl mx-auto">
+        ${getAdminNavHtml('admin')}
+
         <!-- แถบด้านบน: ศูนย์ควบคุมและสถานะเปิด/ปิดระบบ -->
         <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div class="space-y-1">
@@ -543,6 +587,8 @@ window.AdminPortal = (function() {
     toggleSurvey: toggleSurvey,
     confirmResetSchool: confirmResetSchool,
     exportRawSubmissionsCsv: exportRawSubmissionsCsv,
+    isLoggedIn: checkLoginStatus,
+    getAdminNavHtml: getAdminNavHtml,
     getAdminData: function() { return adminData; }
   };
 })();

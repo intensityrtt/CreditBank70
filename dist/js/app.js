@@ -65,6 +65,15 @@ window.App = (function() {
 
   // สลับแท็บหน้าจอ
   function switchTab(tabId) {
+    // ตรวจสอบสิทธิ์: ถ้าจะเข้า tracker หรือ obec-report ต้องเป็น Admin ที่ล็อกอินแล้วเท่านั้น
+    if (tabId === "tracker" || tabId === "obec-report") {
+      var isAuth = window.AdminPortal && typeof window.AdminPortal.isLoggedIn === 'function' && window.AdminPortal.isLoggedIn();
+      if (!isAuth) {
+        showToast("ส่วนนี้สำหรับผู้ดูแลระบบเขตพื้นที่เท่านั้น กรุณาเข้าสู่ระบบ", "warning");
+        tabId = "admin";
+      }
+    }
+
     activeTab = tabId;
 
     // ซ่อนทุกหน้า
@@ -273,4 +282,23 @@ window.App = (function() {
     saveSettingsModal: saveSettingsModal,
     testApiConnection: testApiConnection
   };
+})();
+
+// รันอัตโนมัติทันทีที่ DOM พร้อม
+(function() {
+  function startApp() {
+    if (window.App && typeof window.App.init === 'function') {
+      try {
+        window.App.init();
+      } catch (err) {
+        console.error("App init error:", err);
+      }
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startApp);
+  } else {
+    startApp();
+  }
 })();

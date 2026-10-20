@@ -43,6 +43,8 @@ window.ObecReport = (function() {
 
     var html = `
       <div class="space-y-6 max-w-5xl mx-auto">
+        ${window.AdminPortal ? window.AdminPortal.getAdminNavHtml('obec-report') : ''}
+
         <!-- แถบด้านบนและปุ่มพิมพ์/Export -->
         <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 no-print">
           <div>

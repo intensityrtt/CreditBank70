@@ -28,6 +28,25 @@ window.TrackerView = (function() {
     var container = document.getElementById("tracker-content");
     if (!container) return;
 
+    // ตรวจสอบสิทธิ์ Admin ก่อนแสดงผล
+    var isAuth = window.AdminPortal && typeof window.AdminPortal.isLoggedIn === 'function' && window.AdminPortal.isLoggedIn();
+    if (!isAuth) {
+      container.innerHTML = `
+        <div class="bg-white p-8 rounded-2xl border border-slate-200 text-center space-y-4 max-w-lg mx-auto my-12 shadow-sm">
+          <div class="w-16 h-16 rounded-full bg-amber-100 text-amber-700 mx-auto flex items-center justify-center">
+            <i data-lucide="shield-alert" class="w-8 h-8"></i>
+          </div>
+          <h3 class="text-xl font-bold text-slate-800">ต้องเข้าสู่ระบบ Admin ก่อน</h3>
+          <p class="text-sm text-slate-500">ระบบติดตามความก้าวหน้า 34 โรงเรียน สงวนไว้สำหรับผู้ดูแลระบบและเจ้าหน้าที่เขตพื้นที่การศึกษาเท่านั้น</p>
+          <button onclick="App.switchTab('admin')" class="btn-primary">
+            <i data-lucide="lock" class="w-4 h-4"></i> เข้าสู่ระบบ Admin
+          </button>
+        </div>
+      `;
+      if (window.safeRenderIcons) window.safeRenderIcons();
+      return;
+    }
+
     var total = schoolsData.length || 34;
     var submittedList = schoolsData.filter(function(s) { return s.isSubmitted; });
     var pendingList = schoolsData.filter(function(s) { return !s.isSubmitted; });
@@ -49,6 +68,8 @@ window.TrackerView = (function() {
 
     var html = `
       <div class="space-y-6 max-w-6xl mx-auto">
+        ${window.AdminPortal ? window.AdminPortal.getAdminNavHtml('tracker') : ''}
+
         <!-- หัวข้อหน้าจอ -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <div>
