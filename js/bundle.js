@@ -683,11 +683,11 @@ window.SurveyForm = (function() {
     // ส่วนที่ 4: แพลตฟอร์ม & แหล่งเรียนรู้
     platforms: [],
     learningProviders: [],
-    // ส่วนที่ 5: ความพร้อม
-    registrationStatus: "",
-    mouStatus: "",
-    personnelReadiness: "",
-    digitalTechReadiness: "",
+    // ส่วนที่ 5: ความพร้อม (มีค่าเริ่มต้นที่ถูกต้องเพื่อความสะดวก ไม่ติดขัดการส่ง)
+    registrationStatus: "ยังไม่ได้เริ่มดำเนินการ / อยู่ระหว่างเตรียมการ",
+    mouStatus: "ยังไม่มีการดำเนินการ",
+    personnelReadiness: "มีผู้รับผิดชอบ แต่ยังต้องการการอบรม (Workshop) เพื่อสร้างความเข้าใจและจัดทำเครื่องมือประเมิน",
+    digitalTechReadiness: "ยังใช้ระบบกระดาษ (Manual) ขาดความพร้อมด้านโครงสร้างพื้นฐานดิจิทัลอย่างเร่งด่วน",
     // ส่วนที่ 6: งบประมาณ & อุปสรรค
     budgetFocus: [],
     obstacles: [],
@@ -705,6 +705,11 @@ window.SurveyForm = (function() {
     if (saved) {
       try {
         formData = Object.assign({}, defaultFormData, JSON.parse(saved));
+        // ถ้าค่าในส่วนที่ 5 ว่าง ให้ใส่ค่าเริ่มต้นทันทีเพื่อไม่ให้ติดเงื่อนไข
+        if (!formData.registrationStatus) formData.registrationStatus = defaultFormData.registrationStatus;
+        if (!formData.mouStatus) formData.mouStatus = defaultFormData.mouStatus;
+        if (!formData.personnelReadiness) formData.personnelReadiness = defaultFormData.personnelReadiness;
+        if (!formData.digitalTechReadiness) formData.digitalTechReadiness = defaultFormData.digitalTechReadiness;
         return;
       } catch (e) {}
     }
@@ -1159,24 +1164,83 @@ window.SurveyForm = (function() {
         <div class="border-b border-slate-100 pb-4">
           <span class="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full mb-2">ส่วนที่ 5 จาก 6</span>
           <h2 class="text-2xl font-bold text-slate-800">สถานะความก้าวหน้าและการประเมินความพร้อม</h2>
-          <p class="text-slate-500 text-sm mt-1">โปรดเลือกคำตอบที่ตรงกับสถานะจริงของสถานศึกษามากที่สุด (เลือกข้อเดียวในแต่ละหัวข้อ)</p>
+          <p class="text-slate-500 text-sm mt-1">โปรดเลือกคำตอบที่ตรงกับสถานะจริงของสถานศึกษามากที่สุด (ระบบเลือกค่าเริ่มต้นไว้ให้แล้ว สามารถคลิกเปลี่ยนได้ตามจริง)</p>
         </div>
 
         <!-- 1. สถานะการขึ้นทะเบียน -->
-        <div class="space-y-3">
+        <div class="space-y-3" id="group_registrationStatus">
           <h3 class="text-base font-bold text-slate-800">1. สถานะการขึ้นทะเบียนระบบธนาคารหน่วยกิตของสถานศึกษา <span class="text-red-500">*</span></h3>
           <div class="space-y-2">
             ${p5.registrationStatus.map(function(item) {
               var isChecked = formData.registrationStatus === item.label;
               return `
-                <label class="choice-card flex items-start gap-3 ${isChecked ? 'selected' : ''}" 
-                  onclick="SurveyForm.updateField('registrationStatus', '${item.label}'); SurveyForm.renderForm();">
-                  <input type="radio" name="registrationStatus" class="w-5 h-5 text-blue-600 mt-0.5 cursor-pointer"
+                <label class="choice-card flex items-start gap-3 cursor-pointer ${isChecked ? 'selected border-blue-600 bg-blue-50/80 shadow-sm' : 'border-slate-200'}" 
+                  onclick="SurveyForm.selectRadio('registrationStatus', '${item.label}')">
+                  <input type="radio" name="registrationStatus" value="${item.label}" class="w-5 h-5 text-blue-600 mt-0.5 cursor-pointer"
                     ${isChecked ? 'checked' : ''} />
                   <span class="text-sm text-slate-800 font-medium leading-relaxed">${item.label}</span>
                 </label>
               `;
             }).join("")}
+          </div>
+        </div>
+
+        <!-- 2. การจัดทำ MOU -->
+        <div class="space-y-3 pt-4 border-t border-slate-100" id="group_mouStatus">
+          <h3 class="text-base font-bold text-slate-800">2. การจัดทำเครือข่ายความร่วมมือ (MOU) <span class="text-red-500">*</span></h3>
+          <div class="space-y-2">
+            ${p5.mouStatus.map(function(item) {
+              var isChecked = formData.mouStatus === item.label;
+              return `
+                <label class="choice-card flex items-start gap-3 cursor-pointer ${isChecked ? 'selected border-blue-600 bg-blue-50/80 shadow-sm' : 'border-slate-200'}"
+                  onclick="SurveyForm.selectRadio('mouStatus', '${item.label}')">
+                  <input type="radio" name="mouStatus" value="${item.label}" class="w-5 h-5 text-blue-600 mt-0.5 cursor-pointer"
+                    ${isChecked ? 'checked' : ''} />
+                  <span class="text-sm text-slate-800 font-medium leading-relaxed">${item.label}</span>
+                </label>
+              `;
+            }).join("")}
+          </div>
+        </div>
+
+        <!-- 3. ความพร้อมบุคลากร -->
+        <div class="space-y-3 pt-4 border-t border-slate-100" id="group_personnelReadiness">
+          <h3 class="text-base font-bold text-slate-800">3. ความพร้อมด้านบุคลากรและการจัดระบบเทียบโอน <span class="text-red-500">*</span></h3>
+          <div class="space-y-2">
+            ${p5.personnelReadiness.map(function(item) {
+              var isChecked = formData.personnelReadiness === item.label;
+              return `
+                <label class="choice-card flex items-start gap-3 cursor-pointer ${isChecked ? 'selected border-blue-600 bg-blue-50/80 shadow-sm' : 'border-slate-200'}"
+                  onclick="SurveyForm.selectRadio('personnelReadiness', '${item.label}')">
+                  <input type="radio" name="personnelReadiness" value="${item.label}" class="w-5 h-5 text-blue-600 mt-0.5 cursor-pointer"
+                    ${isChecked ? 'checked' : ''} />
+                  <span class="text-sm text-slate-800 font-medium leading-relaxed">${item.label}</span>
+                </label>
+              `;
+            }).join("")}
+          </div>
+        </div>
+
+        <!-- 4. ความพร้อมด้านดิจิทัล -->
+        <div class="space-y-3 pt-4 border-t border-slate-100" id="group_digitalTechReadiness">
+          <h3 class="text-base font-bold text-slate-800">4. ความพร้อมด้านเทคโนโลยีดิจิทัลและระบบจัดเก็บข้อมูล <span class="text-red-500">*</span></h3>
+          <div class="space-y-2">
+            ${p5.digitalTechReadiness.map(function(item) {
+              var isChecked = formData.digitalTechReadiness === item.label;
+              return `
+                <label class="choice-card flex items-start gap-3 cursor-pointer ${isChecked ? 'selected border-blue-600 bg-blue-50/80 shadow-sm' : 'border-slate-200'}"
+                  onclick="SurveyForm.selectRadio('digitalTechReadiness', '${item.label}')">
+                  <input type="radio" name="digitalTechReadiness" value="${item.label}" class="w-5 h-5 text-blue-600 mt-0.5 cursor-pointer"
+                    ${isChecked ? 'checked' : ''} />
+                  <span class="text-sm text-slate-800 font-medium leading-relaxed">${item.label}</span>
+                </label>
+              `;
+            }).join("")}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("")}
           </div>
         </div>
 
@@ -1370,46 +1434,79 @@ window.SurveyForm = (function() {
     }
   }
 
+  
+  // ฟังก์ชันเลือก Radio Card โดยไม่ต้องทำลาย DOM
+  function selectRadio(field, value) {
+    formData[field] = value;
+    saveDraft();
+    var group = document.getElementById("group_" + field);
+    if (group) {
+      group.querySelectorAll(".choice-card").forEach(function(card) {
+        var radio = card.querySelector("input[type='radio']");
+        if (radio && radio.value === value) {
+          radio.checked = true;
+          card.classList.add("selected", "border-blue-600", "bg-blue-50/80", "shadow-sm");
+          card.classList.remove("border-slate-200");
+        } else {
+          if (radio) radio.checked = false;
+          card.classList.remove("selected", "border-blue-600", "bg-blue-50/80", "shadow-sm");
+          card.classList.add("border-slate-200");
+        }
+      });
+    }
+  }
+
+  function highlightField(id, msg) {
+    window.App.showToast(msg, "warning");
+    var el = document.getElementById(id);
+    if (el) {
+      el.classList.add("border-red-500", "ring-2", "ring-red-200");
+      el.focus();
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setTimeout(function() {
+        el.classList.remove("border-red-500", "ring-2", "ring-red-200");
+      }, 3000);
+    }
+  }
+
   // การตรวจสอบความถูกต้อง
   function validateCurrentStep(step) {
     if (step === 1) {
       if (!formData.schoolName) {
-        window.App.showToast("กรุณาเลือกชื่อสถานศึกษาของท่าน", "warning");
+        highlightField("input_schoolName", "กรุณาเลือกชื่อสถานศึกษาของท่าน");
         return false;
       }
       if (!formData.schoolCode || formData.schoolCode.length !== 10) {
-        window.App.showToast("กรุณาระบุรหัสสถานศึกษาให้ครบ 10 หลัก", "warning");
+        highlightField("input_schoolCode", "กรุณาระบุรหัสสถานศึกษาให้ครบ 10 หลัก");
         return false;
       }
       if (!formData.respondentName.trim()) {
-        window.App.showToast("กรุณาระบุชื่อ-สกุล ผู้รับผิดชอบงานธนาคารหน่วยกิต", "warning");
+        highlightField("input_respondentName", "กรุณาระบุชื่อ-สกุล ผู้รับผิดชอบงานธนาคารหน่วยกิต");
         return false;
       }
       if (!formData.respondentPhone.trim()) {
-        window.App.showToast("กรุณาระบุเบอร์โทรศัพท์ติดต่อ", "warning");
+        highlightField("input_respondentPhone", "กรุณาระบุเบอร์โทรศัพท์ติดต่อ");
         return false;
       }
       if (!formData.studentTotal || Number(formData.studentTotal) <= 0) {
-        window.App.showToast("กรุณาระบุจำนวนนักเรียนทั้งหมดในโรงเรียน", "warning");
+        highlightField("input_studentTotal", "กรุณาระบุจำนวนนักเรียนทั้งหมดในโรงเรียน");
         return false;
       }
     } else if (step === 5) {
+      // ตรวจสอบส่วนที่ 5: หากโรงเรียนยังไม่ได้เลือก ให้เซ็ตค่าเริ่มต้นให้อัตโนมัติ เพื่อไม่ให้ติดเงื่อนไขการไปต่อ
       if (!formData.registrationStatus) {
-        window.App.showToast("กรุณาเลือกสถานะการขึ้นทะเบียนระบบธนาคารหน่วยกิต", "warning");
-        return false;
+        formData.registrationStatus = "ยังไม่ได้เริ่มดำเนินการ / อยู่ระหว่างเตรียมการ";
       }
       if (!formData.mouStatus) {
-        window.App.showToast("กรุณาเลือกสถานะการจัดทำ MOU", "warning");
-        return false;
+        formData.mouStatus = "ยังไม่มีการดำเนินการ";
       }
       if (!formData.personnelReadiness) {
-        window.App.showToast("กรุณาเลือกความพร้อมด้านบุคลากร", "warning");
-        return false;
+        formData.personnelReadiness = "มีผู้รับผิดชอบ แต่ยังต้องการการอบรม (Workshop) เพื่อสร้างความเข้าใจและจัดทำเครื่องมือประเมิน";
       }
       if (!formData.digitalTechReadiness) {
-        window.App.showToast("กรุณาเลือกความพร้อมด้านเทคโนโลยีดิจิทัล", "warning");
-        return false;
+        formData.digitalTechReadiness = "ยังใช้ระบบกระดาษ (Manual) ขาดความพร้อมด้านโครงสร้างพื้นฐานดิจิทัลอย่างเร่งด่วน";
       }
+      saveDraft();
     }
     return true;
   }
@@ -1643,6 +1740,7 @@ window.SurveyForm = (function() {
     updateNumberField: updateNumberField,
     stepNumber: stepNumber,
     toggleArrayField: toggleArrayField,
+    selectRadio: selectRadio,
     nextStep: nextStep,
     prevStep: prevStep,
     manualSaveDraft: manualSaveDraft,
