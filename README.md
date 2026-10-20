@@ -88,10 +88,9 @@
    git commit -m "Initial Credit Bank Survey System Nan 1"
    git branch -M main
    ```
-2. สร้าง Repository ใหม่บน GitHub ของท่าน (เช่น `credit-bank-nan1`)
-3. เชื่อมโยงและ Push ขึ้น GitHub:
+2. เชื่อมโยงและ Push ขึ้น GitHub:
    ```bash
-   git remote add origin https://github.com/ชื่อผู้ใช้ของคุณ/credit-bank-nan1.git
+   git remote add origin https://github.com/intensityrtt/CreditBank70.git
    git push -u origin main
    ```
 
@@ -100,12 +99,12 @@
 ### ขั้นตอนที่ 3: Deploy ขึ้น Vercel
 1. เข้าเว็บไซต์ **https://vercel.com** แล้วล็อกอินด้วย GitHub
 2. กดปุ่ม **"Add New..."** -> **"Project"**
-3. เลือก Repository `credit-bank-nan1` ที่เพิ่ง Push ขึ้นไป
+3. เลือก Repository `CreditBank70`
 4. ในหน้าตั้งค่าโปรเจกต์:
    - **Framework Preset:** เลือก `Other` หรือ `Vite` (ระบบจะตรวจจับอัตโนมัติ)
    - ไม่ต้องตั้งค่า Build Command หรือ Output Directory เพิ่มเติม
 5. กดปุ่ม **"Deploy"**
-6. ภายใน 10 วินาที ท่านจะได้ลิงก์เว็บไซต์ใช้งานจริงทันที เช่น `https://credit-bank-nan1.vercel.app`
+6. ภายใน 10 วินาที ท่านจะได้ลิงก์เว็บไซต์ใช้งานจริงทันที เช่น `https://credit-bank70.vercel.app`
 7. เข้าไปที่เว็บไซต์ของท่าน คลิกไอคอนรูปเฟือง ⚙️ มุมขวาบน แล้วนำ **URL Google Apps Script** จากขั้นตอนที่ 1 มาวาง แล้วกดบันทึก เป็นอันเสร็จสมบูรณ์!
 
 ---
