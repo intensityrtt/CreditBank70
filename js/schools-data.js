@@ -1,0 +1,40 @@
+/**
+ * รายชื่อสถานศึกษาเป้าหมาย 34 โรงเรียนขยายโอกาสทางการศึกษา
+ * ในสังกัดสำนักงานเขตพื้นที่การศึกษาประถมศึกษาน่าน เขต 1
+ */
+window.MASTER_SCHOOLS_DATA = [
+  { id: 1, name: "โรงเรียนบ้านน้ำครกใหม่", code: "1055250006", district: "เมืองน่าน", defaultSize: "กลาง" },
+  { id: 2, name: "โรงเรียนบ้านไชยสถาน", code: "1055250020", district: "เมืองน่าน", defaultSize: "กลาง" },
+  { id: 3, name: "โรงเรียนบ้านถืมตอง", code: "1055250026", district: "เมืองน่าน", defaultSize: "กลาง" },
+  { id: 4, name: "โรงเรียนบ้านน้ำงาว", code: "1055250034", district: "เมืองน่าน", defaultSize: "เล็ก" },
+  { id: 5, name: "โรงเรียนบ้านผาตูบ", code: "1055250036", district: "เมืองน่าน", defaultSize: "กลาง" },
+  { id: 6, name: "โรงเรียนบ้านห้วยมอญ", code: "1055250031", district: "เมืองน่าน", defaultSize: "เล็ก" },
+  { id: 7, name: "โรงเรียนบ้านน้ำโค้ง", code: "1055250027", district: "เมืองน่าน", defaultSize: "กลาง" },
+  { id: 8, name: "โรงเรียนบ้านสองแคว", code: "1055250030", district: "เมืองน่าน", defaultSize: "กลาง" },
+  { id: 9, name: "โรงเรียนบ้านปางเป๋ย", code: "1055250032", district: "เมืองน่าน", defaultSize: "เล็ก" },
+  { id: 10, name: "โรงเรียนบ้านตอง", code: "1055250059", district: "แม่จริม", defaultSize: "เล็ก" },
+  { id: 11, name: "โรงเรียนบ้านห้วยละเบ้ายา", code: "1055250060", district: "แม่จริม", defaultSize: "เล็ก" },
+  { id: 12, name: "โรงเรียนบ้านน้ำปาย", code: "1055250064", district: "แม่จริม", defaultSize: "เล็ก" },
+  { id: 13, name: "โรงเรียนบ้านน้ำพาง", code: "1055250067", district: "แม่จริม", defaultSize: "กลาง" },
+  { id: 14, name: "โรงเรียนบ้านร่มเกล้า", code: "1055250068", district: "แม่จริม", defaultSize: "กลาง" },
+  { id: 15, name: "โรงเรียนบ้านน้ำตวง", code: "1055250074", district: "แม่จริม", defaultSize: "กลาง" },
+  { id: 16, name: "โรงเรียนบ้านฟ้า", code: "1055250080", district: "บ้านหลวง", defaultSize: "กลาง" },
+  { id: 17, name: "โรงเรียนบ้านเปา", code: "1055250085", district: "บ้านหลวง", defaultSize: "เล็ก" },
+  { id: 18, name: "โรงเรียนชุมชนบ้านอ้อย", code: "1055250088", district: "บ้านหลวง", defaultSize: "กลาง" },
+  { id: 19, name: "โรงเรียนบ้านนา", code: "1055250091", district: "บ้านหลวง", defaultSize: "เล็ก" },
+  { id: 20, name: "โรงเรียนบ้านสันทะ", code: "1055250100", district: "นาน้อย", defaultSize: "กลาง" },
+  { id: 21, name: "โรงเรียนประกิตเวชศักดิ์", code: "1055250106", district: "นาน้อย", defaultSize: "กลาง" },
+  { id: 22, name: "โรงเรียนจอมจันทร์วิทยาคาร", code: "1055250107", district: "นาน้อย", defaultSize: "กลาง" },
+  { id: 23, name: "โรงเรียนบ้านแม่ขะนิง", code: "1055250118", district: "เวียงสา", defaultSize: "กลาง" },
+  { id: 24, name: "โรงเรียนภูเค็งพัฒนา", code: "1055250120", district: "เวียงสา", defaultSize: "เล็ก" },
+  { id: 25, name: "โรงเรียนไตรธารวิทยา", code: "1055250122", district: "เวียงสา", defaultSize: "กลาง" },
+  { id: 26, name: "โรงเรียนบ้านท่ามงคล", code: "1055250125", district: "เวียงสา", defaultSize: "เล็ก" },
+  { id: 27, name: "โรงเรียนบ้านบ่อหอย", code: "1055250130", district: "นาน้อย", defaultSize: "เล็ก" },
+  { id: 28, name: "โรงเรียนป่าแลวหลวงวิทยา", code: "1055250133", district: "สันติสุข", defaultSize: "กลาง" },
+  { id: 29, name: "โรงเรียนบ้านห้วยแฮ้ว", code: "1055250137", district: "สันติสุข", defaultSize: "เล็ก" },
+  { id: 30, name: "โรงเรียนบ้านศรีนาม่าน", code: "1055250140", district: "สันติสุข", defaultSize: "เล็ก" },
+  { id: 31, name: "โรงเรียนราษฎร์รัฐพัฒนา", code: "1055250142", district: "สันติสุข", defaultSize: "กลาง" },
+  { id: 32, name: "โรงเรียนบ้านทุ่งน้อย", code: "1055250145", district: "ภูเพียง", defaultSize: "กลาง" },
+  { id: 33, name: "โรงเรียนบ้านห้วยไฮ", code: "1055250148", district: "ภูเพียง", defaultSize: "เล็ก" },
+  { id: 34, name: "โรงเรียนบ้านหาดเค็ด", code: "1055250152", district: "ภูเพียง", defaultSize: "กลาง" }
+];
