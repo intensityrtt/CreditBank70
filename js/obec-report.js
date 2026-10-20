@@ -32,7 +32,7 @@ window.ObecReport = (function() {
           </button>
         </div>
       `;
-      if (window.lucide) window.lucide.createIcons();
+      if (window.safeRenderIcons) window.safeRenderIcons();
       return;
     }
 
@@ -319,7 +319,7 @@ window.ObecReport = (function() {
     `;
 
     container.innerHTML = html;
-    if (window.lucide) window.lucide.createIcons();
+    if (window.safeRenderIcons) window.safeRenderIcons();
   }
 
   // คัดลอกข้อความลงคลิปบอร์ด

@@ -6,10 +6,31 @@ window.App = (function() {
   var activeTab = "survey";
   var surveyConfig = null;
 
-  async function init() {
+  // ฟังก์ชันเรนเดอร์ไอคอนอย่างปลอดภัย
+  function safeRenderIcons() {
+    try {
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      } else {
+        setTimeout(function() {
+          if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+          }
+        }, 300);
+      }
+    } catch (e) {
+      console.warn("Lucide render notice:", e);
+    }
+  }
+  window.safeRenderIcons = safeRenderIcons;
+
+  function init() {
     setupTabListeners();
-    await checkSystemStatus();
+    // 1. เรนเดอร์หน้าจอทันที ไม่ต้องรอเครือข่าย เพื่อให้เปิดเร็วที่สุด
     switchTab(activeTab);
+    safeRenderIcons();
+    // 2. ตรวจสอบสถานะเซิร์ฟเวอร์แบบเบื้องหลัง (Non-blocking)
+    checkSystemStatus();
   }
 
   // ตรวจสอบสถานะระบบจาก API
@@ -70,18 +91,22 @@ window.App = (function() {
       targetEl.classList.remove("hidden");
     }
 
-    if (tabId === "survey") {
-      window.SurveyForm.init();
-    } else if (tabId === "tracker") {
-      window.TrackerView.init();
-    } else if (tabId === "admin") {
-      window.AdminPortal.init();
-    } else if (tabId === "obec-report") {
-      window.ObecReport.init();
+    try {
+      if (tabId === "survey" && window.SurveyForm) {
+        window.SurveyForm.init();
+      } else if (tabId === "tracker" && window.TrackerView) {
+        window.TrackerView.init();
+      } else if (tabId === "admin" && window.AdminPortal) {
+        window.AdminPortal.init();
+      } else if (tabId === "obec-report" && window.ObecReport) {
+        window.ObecReport.init();
+      }
+    } catch (err) {
+      console.error("Tab switch error for " + tabId, err);
     }
 
     window.scrollTo({ top: 0, behavior: "smooth" });
-    if (window.lucide) window.lucide.createIcons();
+    safeRenderIcons();
   }
 
   function setupTabListeners() {
@@ -120,7 +145,7 @@ window.App = (function() {
     `;
 
     container.appendChild(toast);
-    if (window.lucide) window.lucide.createIcons();
+    safeRenderIcons();
 
     setTimeout(function() {
       toast.classList.remove("translate-y-2", "opacity-0");
@@ -134,7 +159,7 @@ window.App = (function() {
     }, 4000);
   }
 
-  // หน้าต่างตั้งค่าระบบ (Settings Modal)
+  // หน้าต่างตั้งค่าระบบ (Settings Modal) - เข้าถึงได้เฉพาะเมื่อล็อกอิน Admin
   function openSettingsModal() {
     var curUrl = window.ApiService.getApiUrl();
     var modalHtml = `
@@ -143,7 +168,7 @@ window.App = (function() {
           <div class="flex items-center justify-between border-b border-slate-100 pb-4">
             <div class="flex items-center gap-2">
               <i data-lucide="settings" class="w-6 h-6 text-blue-700"></i>
-              <h3 class="text-xl font-bold text-slate-800">ตั้งค่าระบบและการเชื่อมต่อ</h3>
+              <h3 class="text-xl font-bold text-slate-800">ตั้งค่าระบบและการเชื่อมต่อ (Admin)</h3>
             </div>
             <button onclick="App.closeSettingsModal()" class="text-slate-400 hover:text-slate-600">
               <i data-lucide="x" class="w-6 h-6"></i>
@@ -160,13 +185,13 @@ window.App = (function() {
                 placeholder="https://script.google.com/macros/s/.../exec" 
                 class="input-gov font-mono text-xs" />
               <p class="text-xs text-slate-400 mt-1">
-                นำ Web App URL ที่ได้จากการ Deploy ใน Google Apps Script มาใส่ที่นี่ (ดูวิธีในคู่มือ)
+                นำ Web App URL ที่ได้จากการ Deploy ใน Google Apps Script มาใส่ที่นี่
               </p>
             </div>
 
-            <!-- ลิงก์ไปยัง Drive & Spreadsheet -->
+            <!-- ลิงก์ฐานข้อมูลสำหรับ Admin -->
             <div class="bg-slate-50 p-4 rounded-xl space-y-2 text-xs border border-slate-200">
-              <div class="font-bold text-slate-700">แหล่งจัดเก็บข้อมูลบน Google Cloud:</div>
+              <div class="font-bold text-slate-700">แหล่งจัดเก็บข้อมูล (Admin เข้าถึงได้เท่านั้น):</div>
               <div class="flex items-center justify-between py-1 border-b border-slate-200">
                 <span class="text-slate-500">Google Spreadsheet:</span>
                 <a href="${window.APP_CONFIG.SHEET_URL}" target="_blank" class="text-blue-600 hover:underline flex items-center gap-1 font-medium">
@@ -198,7 +223,7 @@ window.App = (function() {
     var root = document.getElementById("modal-root");
     if (root) {
       root.innerHTML = modalHtml;
-      if (window.lucide) window.lucide.createIcons();
+      safeRenderIcons();
     }
   }
 
@@ -249,8 +274,3 @@ window.App = (function() {
     testApiConnection: testApiConnection
   };
 })();
-
-// รันเมื่อโหลดหน้าเสร็จ
-window.addEventListener("DOMContentLoaded", function() {
-  window.App.init();
-});

@@ -217,7 +217,7 @@ window.TrackerView = (function() {
     `;
 
     container.innerHTML = html;
-    if (window.lucide) window.lucide.createIcons();
+    if (window.safeRenderIcons) window.safeRenderIcons();
   }
 
   function setFilter(status) {

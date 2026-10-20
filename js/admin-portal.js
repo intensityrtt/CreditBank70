@@ -61,7 +61,7 @@ window.AdminPortal = (function() {
     `;
 
     container.innerHTML = html;
-    if (window.lucide) window.lucide.createIcons();
+    if (window.safeRenderIcons) window.safeRenderIcons();
   }
 
   async function handleLogin() {
@@ -109,7 +109,7 @@ window.AdminPortal = (function() {
         <p class="text-slate-500 mt-3 font-medium">กำลังโหลดข้อมูลสารสนเทศและสถิติภาพรวม...</p>
       </div>
     `;
-    if (window.lucide) window.lucide.createIcons();
+    if (window.safeRenderIcons) window.safeRenderIcons();
 
     try {
       var resp = await window.ApiService.adminGetFullData(adminPin);
@@ -167,8 +167,37 @@ window.AdminPortal = (function() {
             </button>
 
             <!-- ปุ่มออกจากระบบ -->
-            <button onclick="AdminPortal.logout()" class="p-2 text-slate-400 hover:text-red-600 rounded-lg" title="ออกจากระบบ">
+            <button onclick="AdminPortal.logout()" class="p-2 text-slate-400 hover:text-red-600 rounded-lg cursor-pointer" title="ออกจากระบบ">
               <i data-lucide="log-out" class="w-5 h-5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- แถบเครื่องมือและแหล่งจัดเก็บข้อมูล (เฉพาะ Admin เท่านั้น) -->
+        <div class="bg-gradient-to-r from-slate-900 to-blue-950 text-white p-5 rounded-2xl shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              <span class="text-xs font-bold text-amber-300 uppercase tracking-wider">Admin Cloud Resources</span>
+            </div>
+            <h3 class="text-base font-bold text-white">คลังข้อมูลและเอกสารส่วนกลาง (เฉพาะผู้ดูแลระบบ)</h3>
+            <p class="text-xs text-slate-300">เชื่อมต่อ Google Sheets ฐานข้อมูล และ Google Drive ที่ได้รับการปกป้อง</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2.5">
+            <a href="${window.APP_CONFIG.SHEET_URL}" target="_blank" 
+               class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow transition-all">
+              <i data-lucide="table" class="w-4 h-4"></i> เปิด Google Sheet ฐานข้อมูล
+            </a>
+
+            <a href="${window.APP_CONFIG.DRIVE_FOLDER_URL}" target="_blank" 
+               class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow transition-all">
+              <i data-lucide="folder" class="w-4 h-4"></i> เปิดโฟลเดอร์ Google Drive
+            </a>
+
+            <button onclick="App.openSettingsModal()" 
+               class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 shadow transition-all cursor-pointer">
+              <i data-lucide="settings" class="w-4 h-4"></i> ตั้งค่า API / Web App
             </button>
           </div>
         </div>
@@ -324,7 +353,7 @@ window.AdminPortal = (function() {
     `;
 
     container.innerHTML = html;
-    if (window.lucide) window.lucide.createIcons();
+    if (window.safeRenderIcons) window.safeRenderIcons();
     initCharts(obec);
   }
 

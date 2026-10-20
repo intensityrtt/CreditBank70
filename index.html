@@ -79,7 +79,7 @@
           </div>
         </div>
 
-        <!-- ฝั่งขวา: สถานะเปิด/ปิด และปุ่มตั้งค่า -->
+        <!-- ฝั่งขวา: แสดงสถานะเปิด/ปิดรับแบบสำรวจ -->
         <div class="flex items-center gap-2.5">
           <div id="system-status-pill">
             <div class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -87,31 +87,27 @@
               <span>เปิดรับแบบสำรวจ</span>
             </div>
           </div>
-
-          <button onclick="App.openSettingsModal()" class="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors" title="ตั้งค่าระบบ / เชื่อมต่อ Apps Script">
-            <i data-lucide="settings" class="w-5 h-5"></i>
-          </button>
         </div>
       </div>
 
-      <!-- แถบเมนูแท็บนำทาง (Navigation Tabs) -->
+      <!-- แถบเมนูแท็บนำทาง (Navigation Tabs) พร้อม onclick ตรงทุกลิงก์ -->
       <nav class="flex space-x-1 sm:space-x-3 overflow-x-auto border-t border-slate-100 py-1.5 text-sm font-medium no-print">
-        <button class="nav-tab-btn flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg border-b-2 transition-all" data-tab="survey">
+        <button onclick="App.switchTab('survey')" class="nav-tab-btn flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg border-b-2 transition-all cursor-pointer" data-tab="survey">
           <i data-lucide="edit-3" class="w-4 h-4"></i>
           <span>แบบสำรวจสำหรับสถานศึกษา</span>
         </button>
 
-        <button class="nav-tab-btn flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg border-b-2 transition-all" data-tab="tracker">
+        <button onclick="App.switchTab('tracker')" class="nav-tab-btn flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg border-b-2 transition-all cursor-pointer" data-tab="tracker">
           <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
           <span>ติดตามความก้าวหน้า 34 รร.</span>
         </button>
 
-        <button class="nav-tab-btn flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg border-b-2 transition-all" data-tab="admin">
+        <button onclick="App.switchTab('admin')" class="nav-tab-btn flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg border-b-2 transition-all cursor-pointer" data-tab="admin">
           <i data-lucide="shield" class="w-4 h-4"></i>
           <span>ระบบผู้ดูแลเขต (Admin)</span>
         </button>
 
-        <button class="nav-tab-btn flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg border-b-2 transition-all" data-tab="obec-report">
+        <button onclick="App.switchTab('obec-report')" class="nav-tab-btn flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg border-b-2 transition-all cursor-pointer" data-tab="obec-report">
           <i data-lucide="file-check" class="w-4 h-4"></i>
           <span>รายงาน สพฐ.</span>
         </button>
@@ -150,7 +146,7 @@
     </div>
   </main>
 
-  <!-- ส่วนท้ายหน้าเว็บ (Footer) -->
+  <!-- ส่วนท้ายหน้าเว็บ (Footer สาธารณะ - ไม่แสดง Sheet และ Drive ตามคำขอ) -->
   <footer class="bg-white border-t border-slate-200 py-6 mt-12 text-slate-500 text-xs no-print">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
       <div class="space-y-1">
@@ -158,18 +154,8 @@
         <p>ระบบรวบรวมและประมวลผลข้อมูลการดำเนินงานธนาคารหน่วยกิต (Credit Bank) ระดับการศึกษาขั้นพื้นฐาน ปีงบประมาณ 2570</p>
       </div>
 
-      <div class="flex items-center gap-4 text-xs font-medium">
-        <a href="https://docs.google.com/spreadsheets/d/1OX7wLdznfnRAvR0XkIoKXS7lD8TlWMMsE95thnsuIrU/edit?usp=drive_link" 
-           target="_blank" class="hover:text-blue-700 flex items-center gap-1">
-          <i data-lucide="table" class="w-3.5 h-3.5"></i> Google Sheet
-        </a>
-        <a href="https://drive.google.com/drive/folders/1CVEw_Ux3HWjkYwHQQFoPU6MZjX_pY6mL?usp=drive_link" 
-           target="_blank" class="hover:text-blue-700 flex items-center gap-1">
-          <i data-lucide="folder" class="w-3.5 h-3.5"></i> Google Drive
-        </a>
-        <button onclick="App.openSettingsModal()" class="hover:text-blue-700 flex items-center gap-1">
-          <i data-lucide="cog" class="w-3.5 h-3.5"></i> ตั้งค่าระบบ
-        </button>
+      <div class="text-xs text-slate-400">
+        โรงเรียนขยายโอกาสทางการศึกษาในสังกัด 34 แห่ง
       </div>
     </div>
   </footer>
@@ -188,5 +174,21 @@
   <script src="js/admin-portal.js"></script>
   <script src="js/obec-report.js"></script>
   <script src="js/app.js"></script>
+
+  <!-- สั่งเริ่มระบบทันที ไม่ต้องรอ Event listener ให้เกิดข้อผิดพลาด -->
+  <script>
+    (function() {
+      function start() {
+        if (window.App && typeof window.App.init === 'function') {
+          window.App.init();
+        }
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', start);
+      } else {
+        start();
+      }
+    })();
+  </script>
 </body>
 </html>

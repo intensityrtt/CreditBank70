@@ -31,3 +31,23 @@ window.APP_CONFIG = {
     academicYear: "2570"
   }
 };
+
+/**
+ * ฟังก์ชันช่วยเรนเดอร์ไอคอน Lucide อย่างปลอดภัย
+ */
+window.safeRenderIcons = function() {
+  try {
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    } else {
+      setTimeout(function() {
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+          window.lucide.createIcons();
+        }
+      }, 250);
+    }
+  } catch (e) {
+    console.warn("Lucide notice:", e);
+  }
+};
+

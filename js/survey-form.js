@@ -149,7 +149,7 @@ window.SurveyForm = (function() {
     `;
 
     container.innerHTML = html;
-    if (window.lucide) window.lucide.createIcons();
+    if (window.safeRenderIcons) window.safeRenderIcons();
   }
 
   // เนื้อหาแต่ละขั้นตอน
@@ -851,7 +851,7 @@ window.SurveyForm = (function() {
     var modalContainer = document.getElementById("modal-root");
     if (modalContainer) {
       modalContainer.innerHTML = modalHtml;
-      if (window.lucide) window.lucide.createIcons();
+      if (window.safeRenderIcons) window.safeRenderIcons();
     }
   }
 
@@ -866,7 +866,7 @@ window.SurveyForm = (function() {
     if (btn) {
       btn.disabled = true;
       btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> กำลังบันทึกข้อมูล...`;
-      if (window.lucide) window.lucide.createIcons();
+      if (window.safeRenderIcons) window.safeRenderIcons();
     }
 
     try {
@@ -902,7 +902,7 @@ window.SurveyForm = (function() {
         if (btn) {
           btn.disabled = false;
           btn.innerHTML = `<i data-lucide="send" class="w-5 h-5"></i> ยืนยันส่งข้อมูลแบบสำรวจ`;
-          if (window.lucide) window.lucide.createIcons();
+          if (window.safeRenderIcons) window.safeRenderIcons();
         }
       }
     } catch (err) {
@@ -910,7 +910,7 @@ window.SurveyForm = (function() {
       if (btn) {
         btn.disabled = false;
         btn.innerHTML = `<i data-lucide="send" class="w-5 h-5"></i> ยืนยันส่งข้อมูลแบบสำรวจ`;
-        if (window.lucide) window.lucide.createIcons();
+        if (window.safeRenderIcons) window.safeRenderIcons();
       }
     }
   }
@@ -986,7 +986,7 @@ window.SurveyForm = (function() {
     `;
 
     container.innerHTML = html;
-    if (window.lucide) window.lucide.createIcons();
+    if (window.safeRenderIcons) window.safeRenderIcons();
   }
 
   return {
