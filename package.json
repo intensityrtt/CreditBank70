@@ -1,5 +1,8 @@
 {
   "name": "creditbank-nan1",
   "version": "1.0.0",
-  "private": true
+  "private": true,
+  "scripts": {
+    "build": "node build.js"
+  }
 }

@@ -315,14 +315,14 @@ window.SurveyForm = (function() {
               <i data-lucide="image" class="w-4 h-4 text-amber-300"></i>
               <span>แผนภาพคำอธิบาย: 5 รูปแบบการเทียบโอนและระบบธนาคารหน่วยกิตสำหรับนักเรียน (จาก สพฐ.)</span>
             </div>
-            <a href="images/credit_bank_5_models.jpg" target="_blank" class="text-xs bg-white/20 hover:bg-white/30 text-white px-2.5 py-1 rounded-md transition flex items-center gap-1 font-medium">
+            <button type="button" onclick="SurveyForm.openImageViewer('models5')" class="text-xs bg-white/20 hover:bg-white/30 text-white px-2.5 py-1 rounded-md transition flex items-center gap-1 font-medium cursor-pointer">
               <i data-lucide="zoom-in" class="w-3.5 h-3.5"></i> ดูภาพขยาย
-            </a>
+            </button>
           </div>
           <div class="p-2 sm:p-4 bg-slate-50 flex justify-center">
-            <img src="images/credit_bank_5_models.jpg" alt="5 รูปแบบการเทียบโอนและระบบธนาคารหน่วยกิตสำหรับนักเรียน" 
+            <img src="${(window.SURVEY_IMAGES && window.SURVEY_IMAGES.models5) ? window.SURVEY_IMAGES.models5 : 'images/credit_bank_5_models.jpg'}" alt="5 รูปแบบการเทียบโอนและระบบธนาคารหน่วยกิตสำหรับนักเรียน" 
               class="rounded-xl max-w-full h-auto border border-slate-200 shadow-sm max-h-[520px] object-contain cursor-pointer hover:opacity-95 transition-opacity" 
-              onclick="window.open('images/credit_bank_5_models.jpg', '_blank')" 
+              onclick="SurveyForm.openImageViewer('models5')" 
               title="คลิกเพื่อเปิดดูภาพขนาดเต็ม" />
           </div>
         </div>
@@ -404,14 +404,14 @@ window.SurveyForm = (function() {
               <i data-lucide="image" class="w-4 h-4 text-amber-300"></i>
               <span>แผนภาพคำอธิบาย: การขับเคลื่อนงานตามนโยบายและโครงการ Credit Bank (จาก สพฐ.)</span>
             </div>
-            <a href="images/credit_bank_9_projects.jpg" target="_blank" class="text-xs bg-white/20 hover:bg-white/30 text-white px-2.5 py-1 rounded-md transition flex items-center gap-1 font-medium">
+            <button type="button" onclick="SurveyForm.openImageViewer('projects9')" class="text-xs bg-white/20 hover:bg-white/30 text-white px-2.5 py-1 rounded-md transition flex items-center gap-1 font-medium cursor-pointer">
               <i data-lucide="zoom-in" class="w-3.5 h-3.5"></i> ดูภาพขยาย
-            </a>
+            </button>
           </div>
           <div class="p-2 sm:p-4 bg-slate-50 flex justify-center">
-            <img src="images/credit_bank_9_projects.jpg" alt="การขับเคลื่อนงานตามนโยบายและโครงการ Credit Bank" 
+            <img src="${(window.SURVEY_IMAGES && window.SURVEY_IMAGES.projects9) ? window.SURVEY_IMAGES.projects9 : 'images/credit_bank_9_projects.jpg'}" alt="การขับเคลื่อนงานตามนโยบายและโครงการ Credit Bank" 
               class="rounded-xl max-w-full h-auto border border-slate-200 shadow-sm max-h-[520px] object-contain cursor-pointer hover:opacity-95 transition-opacity" 
-              onclick="window.open('images/credit_bank_9_projects.jpg', '_blank')" 
+              onclick="SurveyForm.openImageViewer('projects9')" 
               title="คลิกเพื่อเปิดดูภาพขนาดเต็ม" />
           </div>
         </div>
@@ -936,6 +936,53 @@ window.SurveyForm = (function() {
     if (modalContainer) modalContainer.innerHTML = "";
   }
 
+  // หน้าต่างดูภาพอินโฟกราฟิกแบบขยายเต็มจอ (Modal Image Viewer)
+  function openImageViewer(imageType) {
+    var isModels = imageType === 'models5';
+    var title = isModels 
+      ? 'แผนภาพ: 5 รูปแบบการเทียบโอนและระบบธนาคารหน่วยกิตสำหรับนักเรียน (สพฐ.)' 
+      : 'แผนภาพ: การขับเคลื่อนงานตามนโยบายและโครงการ Credit Bank 9 โครงการ (สพฐ.)';
+    var imgSrc = (window.SURVEY_IMAGES && window.SURVEY_IMAGES[imageType]) 
+      ? window.SURVEY_IMAGES[imageType] 
+      : (isModels ? 'images/credit_bank_5_models.jpg' : 'images/credit_bank_9_projects.jpg');
+
+    var modalHtml = `
+      <div id="image-viewer-modal" class="fixed inset-0 z-50 flex flex-col items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md animate-fade-in" onclick="if(event.target === this) SurveyForm.closeImageViewer();">
+        <div class="bg-white rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden shadow-2xl border border-slate-700/30">
+          <div class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white px-5 py-3.5 flex items-center justify-between border-b border-slate-800">
+            <div class="flex items-center gap-2.5 text-sm sm:text-base font-bold truncate">
+              <i data-lucide="image" class="w-5 h-5 text-amber-400 shrink-0"></i>
+              <span class="truncate">${title}</span>
+            </div>
+            <button onclick="SurveyForm.closeImageViewer()" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition">
+              <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+          </div>
+          <div class="p-2 sm:p-4 bg-slate-100 overflow-auto flex items-center justify-center min-h-[300px]">
+            <img src="${imgSrc}" alt="${title}" class="max-w-full max-h-[72vh] object-contain rounded-lg shadow-sm" />
+          </div>
+          <div class="px-5 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+            <span>💡 สกัดจากเอกสารคู่มือ Credit Bank สำนักงานคณะกรรมการการศึกษาขั้นพื้นฐาน (สพฐ.)</span>
+            <button onclick="SurveyForm.closeImageViewer()" class="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-lg transition">
+              ปิดหน้าต่าง
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    var modalContainer = document.getElementById("modal-root");
+    if (modalContainer) {
+      modalContainer.innerHTML = modalHtml;
+      if (window.safeRenderIcons) window.safeRenderIcons();
+    }
+  }
+
+  function closeImageViewer() {
+    var modalContainer = document.getElementById("modal-root");
+    if (modalContainer) modalContainer.innerHTML = "";
+  }
+
   // ส่งข้อมูลไปยัง API
   async function submitForm() {
     var btn = document.getElementById("btn-submit-final");
@@ -1080,6 +1127,8 @@ window.SurveyForm = (function() {
     clearDraft: clearDraft,
     openConfirmModal: openConfirmModal,
     closeConfirmModal: closeConfirmModal,
+    openImageViewer: openImageViewer,
+    closeImageViewer: closeImageViewer,
     submitForm: submitForm
   };
 })();
