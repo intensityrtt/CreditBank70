@@ -44,7 +44,7 @@ window.AdminPortal = (function() {
             <input type="password" id="input_admin_pin" 
               placeholder="ระบุรหัส PIN ผู้ดูแลระบบ" 
               class="input-gov text-center text-lg tracking-widest font-mono" />
-            <p class="text-xs text-slate-400 mt-1 text-center">รหัสเริ่มต้น: <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-700">nan1credit2570</code></p>
+            <p class="text-xs text-slate-400 mt-1.5 text-center">เฉพาะผู้ดูแลระบบและเจ้าหน้าที่ผู้ได้รับมอบหมายเท่านั้น</p>
           </div>
 
           <button type="submit" class="btn-primary w-full bg-slate-800 hover:bg-slate-900 text-white">
