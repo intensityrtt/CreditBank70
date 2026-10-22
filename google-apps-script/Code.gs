@@ -24,18 +24,18 @@ var MASTER_SCHOOLS = [
   { name: "โรงเรียนบ้านสองแคว", code: "1055250030", district: "เมืองน่าน" },
   { name: "โรงเรียนบ้านปางเป๋ย", code: "1055250032", district: "เมืองน่าน" },
   { name: "โรงเรียนบ้านตอง", code: "1055250059", district: "แม่จริม" },
-  { name: "โรงเรียนบ้านห้วยละเบ้ายา", code: "1055250060", district: "แม่จริม" },
+  { name: "โรงเรียนบ้านห้วยละเบ้ายา", code: "1055250060", district: "เมืองน่าน" },
   { name: "โรงเรียนบ้านน้ำปาย", code: "1055250064", district: "แม่จริม" },
   { name: "โรงเรียนบ้านน้ำพาง", code: "1055250067", district: "แม่จริม" },
   { name: "โรงเรียนบ้านร่มเกล้า", code: "1055250068", district: "แม่จริม" },
   { name: "โรงเรียนบ้านน้ำตวง", code: "1055250074", district: "แม่จริม" },
   { name: "โรงเรียนบ้านฟ้า", code: "1055250080", district: "บ้านหลวง" },
-  { name: "โรงเรียนบ้านเปา", code: "1055250085", district: "บ้านหลวง" },
-  { name: "โรงเรียนชุมชนบ้านอ้อย", code: "1055250088", district: "บ้านหลวง" },
-  { name: "โรงเรียนบ้านนา", code: "1055250091", district: "บ้านหลวง" },
+  { name: "โรงเรียนบ้านเปา", code: "1055250085", district: "นาน้อย" },
+  { name: "โรงเรียนชุมชนบ้านอ้อย", code: "1055250088", district: "นาน้อย" },
+  { name: "โรงเรียนบ้านนา", code: "1055250091", district: "นาน้อย" },
   { name: "โรงเรียนบ้านสันทะ", code: "1055250100", district: "นาน้อย" },
   { name: "โรงเรียนประกิตเวชศักดิ์", code: "1055250106", district: "นาน้อย" },
-  { name: "โรงเรียนจอมจันทร์วิทยาคาร", code: "1055250107", district: "นาน้อย" },
+  { name: "โรงเรียนจอมจันทร์วิทยาคาร", code: "1055250107", district: "เวียงสา" },
   { name: "โรงเรียนบ้านแม่ขะนิง", code: "1055250118", district: "เวียงสา" },
   { name: "โรงเรียนภูเค็งพัฒนา", code: "1055250120", district: "เวียงสา" },
   { name: "โรงเรียนไตรธารวิทยา", code: "1055250122", district: "เวียงสา" },
@@ -104,6 +104,18 @@ function setupDatabase() {
       ]);
     }
     schoolsSheet.autoResizeColumns(1, 12);
+  } else {
+    // ซิงค์ชื่ออำเภอให้เป็นปัจจุบันเสมอ
+    var schoolRows = schoolsSheet.getDataRange().getValues();
+    for (var r = 1; r < schoolRows.length; r++) {
+      var schName = String(schoolRows[r][1]).trim();
+      for (var m = 0; m < MASTER_SCHOOLS.length; m++) {
+        if (MASTER_SCHOOLS[m].name === schName && schoolRows[r][3] !== MASTER_SCHOOLS[m].district) {
+          schoolsSheet.getRange(r + 1, 4).setValue(MASTER_SCHOOLS[m].district);
+          break;
+        }
+      }
+    }
   }
 
   // 3. แผ่นงาน Submissions (เก็บคำตอบละเอียดตามแบบสำรวจโรงเรียน)
