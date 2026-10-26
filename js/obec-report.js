@@ -181,7 +181,7 @@ window.ObecReport = (function() {
                   <div class="p-3 rounded-lg border border-slate-200 bg-slate-50/60">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div class="text-sm font-semibold text-slate-800">
-                        ${p.number}. ${p.title}
+                        ${p.number || p.id}. ${p.title || p.name}
                         ${p.details && p.details.length > 0 ? `
                           <span class="text-xs text-slate-500 block">ระบุ: ${p.details.join(", ")}</span>
                         ` : ''}
@@ -354,7 +354,7 @@ window.ObecReport = (function() {
 ${obec.part2_formats.map(function(f) { return `${f.name}: ${f.schoolsCount} แห่ง, ${f.studentsCount} คน`; }).join("\n")}
 
 [9 โครงการขับเคลื่อน]
-${obec.part3_projects.map(function(p) { return `${p.title}: ${p.schoolsCount} แห่ง, ${p.studentsCount} คน`; }).join("\n")}
+${obec.part3_projects.map(function(p) { return `${p.title || p.name}: ${p.schoolsCount} แห่ง, ${p.studentsCount} คน`; }).join("\n")}
 `;
 
     if (navigator.clipboard) {

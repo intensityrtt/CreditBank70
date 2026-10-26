@@ -50,15 +50,12 @@ window.App = (function() {
     var badge = document.getElementById("system-status-pill");
     if (!badge) return;
 
-    var isLive = window.ApiService.isLiveConnected();
     var isOpen = config.isOpen !== false;
 
     badge.innerHTML = `
-      <div class="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${isOpen ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}">
+      <div class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${isOpen ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}">
         <span class="w-2 h-2 rounded-full ${isOpen ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}"></span>
         <span>${isOpen ? 'เปิดรับแบบสำรวจ' : 'ปิดรับแบบสำรวจ'}</span>
-        <span class="text-slate-400">|</span>
-        <span class="text-xs ${isLive ? 'text-blue-700 font-bold' : 'text-amber-700'}">${isLive ? '● Live Server' : '○ Standby / Demo'}</span>
       </div>
     `;
   }

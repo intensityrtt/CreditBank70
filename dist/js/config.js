@@ -15,8 +15,8 @@ window.APP_CONFIG = {
 
   // LocalStorage Keys
   STORAGE_KEYS: {
-    DRAFT_SURVEY: "cb_nan1_survey_draft_v1",
-    SUBMITTED_RECEIPT: "cb_nan1_last_receipt",
+    DRAFT_SURVEY: "cb_nan1_survey_draft_v2",
+    SUBMITTED_RECEIPT: "cb_nan1_last_receipt_v2",
     ADMIN_TOKEN: "cb_nan1_admin_token",
     GAS_URL: "CREDIT_BANK_GAS_URL"
   },
@@ -50,4 +50,3 @@ window.safeRenderIcons = function() {
     console.warn("Lucide notice:", e);
   }
 };
-

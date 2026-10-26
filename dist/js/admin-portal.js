@@ -331,14 +331,19 @@ window.AdminPortal = (function() {
 
         <!-- รายการจัดการสถานศึกษา 34 แห่ง พร้อมปุ่มรีเซ็ต -->
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-          <div class="flex items-center justify-between">
+          <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 class="text-lg font-bold text-slate-800">จัดการข้อมูลสถานศึกษาเป้าหมาย (34 แห่ง)</h3>
               <p class="text-xs text-slate-500">สามารถตรวจสอบ หรือสั่งรีเซ็ตสถานะเพื่อให้โรงเรียนกรอกใหม่ได้</p>
             </div>
-            <button onclick="AdminPortal.exportRawSubmissionsCsv()" class="btn-secondary text-xs">
-              <i data-lucide="download" class="w-4 h-4"></i> ดาวน์โหลดข้อมูลดิบ (CSV)
-            </button>
+            <div class="flex items-center gap-2">
+              <button onclick="AdminPortal.confirmResetAllData()" class="btn-secondary text-xs text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
+                <i data-lucide="trash-2" class="w-4 h-4"></i> ล้างข้อมูลการส่งทั้งหมด (เริ่มต้นใหม่)
+              </button>
+              <button onclick="AdminPortal.exportRawSubmissionsCsv()" class="btn-secondary text-xs">
+                <i data-lucide="download" class="w-4 h-4"></i> ดาวน์โหลดข้อมูลดิบ (CSV)
+              </button>
+            </div>
           </div>
 
           <div class="overflow-x-auto">
@@ -438,7 +443,7 @@ window.AdminPortal = (function() {
     // 2. Chart Projects
     var ctxProj = document.getElementById("chart-projects");
     if (ctxProj) {
-      var pLabels = obec.part3_projects.map(function(p) { return "โครงการ " + p.number; });
+      var pLabels = obec.part3_projects.map(function(p) { return "โครงการ " + (p.number || p.id); });
       var pData = obec.part3_projects.map(function(p) { return p.studentsCount; });
       charts.projects = new window.Chart(ctxProj, {
         type: 'bar',
@@ -547,6 +552,23 @@ window.AdminPortal = (function() {
     }
   }
 
+  // ล้างข้อมูลการส่งทั้งหมด 34 โรงเรียนเพื่อเริ่มต้นใช้งานจริง
+  async function confirmResetAllData() {
+    if (!confirm("ยืนยันการล้างข้อมูลการส่งแบบสำรวจทั้งหมด? สถานศึกษาทั้ง 34 แห่งจะกลับสู่สถานะ 'ยังไม่ส่งข้อมูล' (0 แห่ง)")) return;
+    window.App.showToast("กำลังล้างข้อมูลทั้งหมด...", "info");
+    try {
+      var resp = await window.ApiService.adminResetAll(adminPin);
+      if (resp && resp.success) {
+        window.App.showToast(resp.message || "ล้างข้อมูลทั้งหมดเรียบร้อยแล้ว", "success");
+        await loadAdminData();
+      } else {
+        window.App.showToast(resp.message || "ไม่สามารถล้างข้อมูลได้", "error");
+      }
+    } catch (e) {
+      window.App.showToast("เกิดข้อผิดพลาด: " + e.message, "error");
+    }
+  }
+
   // ดาวน์โหลดข้อมูลดิบ CSV
   function exportRawSubmissionsCsv() {
     if (!adminData || !adminData.schools) return;
@@ -586,6 +608,7 @@ window.AdminPortal = (function() {
     logout: logout,
     toggleSurvey: toggleSurvey,
     confirmResetSchool: confirmResetSchool,
+    confirmResetAllData: confirmResetAllData,
     exportRawSubmissionsCsv: exportRawSubmissionsCsv,
     isLoggedIn: checkLoginStatus,
     getAdminNavHtml: getAdminNavHtml,

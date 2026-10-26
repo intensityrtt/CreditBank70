@@ -331,6 +331,15 @@ function doPost(e) {
         }
         break;
 
+      case "adminResetAll":
+        var resetAllMap = getSettingsMap();
+        if (payload.pin && String(payload.pin).trim() === String(resetAllMap.adminPin).trim()) {
+          result = resetAllSubmissions();
+        } else {
+          result = { success: false, message: "รหัส PIN ไม่ถูกต้อง" };
+        }
+        break;
+
       case "adminUpdateSettings":
         var adminConf = getSettingsMap();
         if (payload.pin && String(payload.pin).trim() === String(adminConf.adminPin).trim()) {
@@ -651,15 +660,15 @@ function calculateObecMetrics(submissions, schools) {
 
   // สพฐ. ส่วนที่ 3: 9 โครงการ
   var projects = [
-    { id: 1, name: "โครงการ 1 โรงเรียน 3 รูปแบบการศึกษา", schoolsCount: 0, studentsCount: 0 },
-    { id: 2, name: "โครงการทวิศึกษา", schoolsCount: 0, studentsCount: 0 },
-    { id: 3, name: "โครงการการพัฒนาหลักสูตรต่อเนื่องเชื่อมโยง (CLC)", schoolsCount: 0, studentsCount: 0 },
-    { id: 4, name: "โครงการพัฒนาหลักสูตรตามมาตรฐานอาชีพ และ NQF", schoolsCount: 0, studentsCount: 0 },
-    { id: 5, name: "โครงการหลักสูตรสถานศึกษาฐานสมรรถนะในพื้นที่นวัตกรรมการศึกษา (Sandbox)", schoolsCount: 0, studentsCount: 0 },
-    { id: 6, name: "โครงการคลังรายวิชาและสมรรถนะย่อย (Micro-credentials)", schoolsCount: 0, studentsCount: 0 },
-    { id: 7, name: "โครงการเรียนรู้จากใบประกาศ (Skill Certificate) และผลทดสอบมาตรฐาน", schoolsCount: 0, studentsCount: 0 },
-    { id: 8, name: "โครงการส่งเสริมผู้เรียนเรียนล่วงหน้าในหลักสูตรที่สูงขึ้น (Pre-degree)", schoolsCount: 0, studentsCount: 0 },
-    { id: 9, name: "อื่น ๆ (ระบุ)", schoolsCount: 0, studentsCount: 0, details: [] }
+    { id: 1, number: 1, name: "โครงการ 1 โรงเรียน 3 รูปแบบการศึกษา", title: "โครงการ 1 โรงเรียน 3 รูปแบบการศึกษา", schoolsCount: 0, studentsCount: 0 },
+    { id: 2, number: 2, name: "โครงการทวิศึกษา", title: "โครงการทวิศึกษา", schoolsCount: 0, studentsCount: 0 },
+    { id: 3, number: 3, name: "โครงการการพัฒนาหลักสูตรต่อเนื่องเชื่อมโยง (CLC)", title: "โครงการการพัฒนาหลักสูตรต่อเนื่องเชื่อมโยง (CLC)", schoolsCount: 0, studentsCount: 0 },
+    { id: 4, number: 4, name: "โครงการพัฒนาหลักสูตรตามมาตรฐานอาชีพ และ NQF", title: "โครงการพัฒนาหลักสูตรตามมาตรฐานอาชีพ และ NQF", schoolsCount: 0, studentsCount: 0 },
+    { id: 5, number: 5, name: "โครงการหลักสูตรสถานศึกษาฐานสมรรถนะในพื้นที่นวัตกรรมการศึกษา (Sandbox)", title: "โครงการหลักสูตรสถานศึกษาฐานสมรรถนะในพื้นที่นวัตกรรมการศึกษา (Sandbox)", schoolsCount: 0, studentsCount: 0 },
+    { id: 6, number: 6, name: "โครงการคลังรายวิชาและสมรรถนะย่อย (Micro-credentials)", title: "โครงการคลังรายวิชาและสมรรถนะย่อย (Micro-credentials)", schoolsCount: 0, studentsCount: 0 },
+    { id: 7, number: 7, name: "โครงการเรียนรู้จากใบประกาศ (Skill Certificate) และผลทดสอบมาตรฐาน", title: "โครงการเรียนรู้จากใบประกาศ (Skill Certificate) และผลทดสอบมาตรฐาน", schoolsCount: 0, studentsCount: 0 },
+    { id: 8, number: 8, name: "โครงการส่งเสริมผู้เรียนเรียนล่วงหน้าในหลักสูตรที่สูงขึ้น (Pre-degree)", title: "โครงการส่งเสริมผู้เรียนเรียนล่วงหน้าในหลักสูตรที่สูงขึ้น (Pre-degree)", schoolsCount: 0, studentsCount: 0 },
+    { id: 9, number: 9, name: "อื่น ๆ (ระบุ)", title: "อื่น ๆ (ระบุ)", schoolsCount: 0, studentsCount: 0, details: [] }
   ];
 
   // สพฐ. ส่วนที่ 4: แพลตฟอร์ม & แหล่งเรียนรู้
@@ -707,15 +716,31 @@ function calculateObecMetrics(submissions, schools) {
     "ยังใช้ระบบกระดาษ (Manual) ขาดความพร้อมด้านโครงสร้างพื้นฐานดิจิทัลอย่างเร่งด่วน": 0
   };
 
-  var budgetStats = {};
-  var obstacleStats = {};
+  var budgetStats = {
+    "การพัฒนาหลักสูตร การเทียบสมรรถนะ และจัดทำตารางเทียบเคียงรายวิชา": 0,
+    "การพัฒนาเครื่องมือประเมินผลตามสภาพจริง (Authentic Assessment / Rubric)": 0,
+    "การจัดอบรมเชิงปฏิบัติการเพื่อพัฒนาทักษะครูและคณะกรรมการเทียบโอน": 0,
+    "การพัฒนาระบบสารสนเทศ ฐานข้อมูล และจัดหาอุปกรณ์ (Digital Readiness)": 0,
+    "การจัดกิจกรรมการเรียนรู้และพัฒนาทักษะวิชาชีพให้แก่ผู้เรียน": 0
+  };
+  var obstacleStats = {
+    "ขาดงบประมาณในการจัดกิจกรรมและพัฒนาระบบ": 0,
+    "ขาดความเข้าใจในการกำหนดผลลัพธ์การเรียนรู้ (Learning Outcome) และการเทียบโอน": 0,
+    "ภาระงานของครูมีมาก ทำให้การประเมินและติดตามผู้เรียนเป็นรายบุคคลทำได้ยาก": 0,
+    "ขาดแหล่งเรียนรู้หรือขาดความร่วมมือจากสถานประกอบการและชุมชน": 0
+  };
 
-  // วนลูปคำนวณจาก Submissions ล่าสุดของแต่ละโรงเรียน (De-duplicate by school)
+  var submittedNamesMap = {};
+  for (var sIdx = 0; sIdx < submittedSchools.length; sIdx++) {
+    submittedNamesMap[submittedSchools[sIdx].name] = true;
+  }
+
+  // วนลูปคำนวณจาก Submissions ล่าสุดของแต่ละโรงเรียนที่มีสถานะส่งแล้ว (De-duplicate by school)
   var latestSubmissions = {};
   for (var i = 0; i < submissions.length; i++) {
     var sub = submissions[i];
-    var sName = sub["ชื่อสถานศึกษา"];
-    if (sName) {
+    var sName = String(sub["ชื่อสถานศึกษา"] || "").trim();
+    if (sName && submittedNamesMap[sName]) {
       latestSubmissions[sName] = sub; // ทับด้วยอันล่าสุด
     }
   }
@@ -895,7 +920,17 @@ function toggleSurveyState(newState) {
 function resetSchoolSubmission(schoolName) {
   var ss = getSpreadsheet();
   var schoolsSheet = ss.getSheetByName("Schools");
+  var subSheet = ss.getSheetByName("Submissions");
   var logsSheet = ss.getSheetByName("Logs");
+
+  if (subSheet) {
+    var subData = subSheet.getDataRange().getValues();
+    for (var s = subData.length - 1; s >= 1; s--) {
+      if (String(subData[s][2]).trim() === String(schoolName).trim()) {
+        subSheet.deleteRow(s + 1);
+      }
+    }
+  }
 
   var data = schoolsSheet.getDataRange().getValues();
   for (var i = 1; i < data.length; i++) {
@@ -918,6 +953,41 @@ function resetSchoolSubmission(schoolName) {
     }
   }
   return { success: false, message: "ไม่พบชื่อโรงเรียนที่ระบุ" };
+}
+
+/**
+ * ล้างข้อมูลการส่งทั้งหมด 34 โรงเรียนเพื่อเริ่มต้นใช้งานจริง
+ */
+function resetAllSubmissions() {
+  var ss = getSpreadsheet();
+  var schoolsSheet = ss.getSheetByName("Schools");
+  var subSheet = ss.getSheetByName("Submissions");
+  var logsSheet = ss.getSheetByName("Logs");
+
+  if (subSheet && subSheet.getLastRow() > 1) {
+    subSheet.deleteRows(2, subSheet.getLastRow() - 1);
+  }
+
+  if (schoolsSheet) {
+    var data = schoolsSheet.getDataRange().getValues();
+    for (var i = 1; i < data.length; i++) {
+      var row = i + 1;
+      schoolsSheet.getRange(row, 5).setValue("ยังไม่ส่งข้อมูล");
+      schoolsSheet.getRange(row, 6).setValue("-");
+      schoolsSheet.getRange(row, 7).setValue("-");
+      schoolsSheet.getRange(row, 8).setValue("-");
+      schoolsSheet.getRange(row, 9).setValue("-");
+      schoolsSheet.getRange(row, 10).setValue(0);
+      schoolsSheet.getRange(row, 11).setValue(0);
+      schoolsSheet.getRange(row, 12).setValue("-");
+    }
+  }
+
+  if (logsSheet) {
+    logsSheet.appendRow([new Date(), "RESET_ALL_DATA", "ADMIN", "ล้างข้อมูลการส่งทั้งหมดเพื่อเริ่มใช้งานจริง"]);
+  }
+
+  return { success: true, message: "ล้างข้อมูลการส่งทั้งหมดเรียบร้อยแล้ว ระบบพร้อมเริ่มต้นใช้งานจริง" };
 }
 
 /**

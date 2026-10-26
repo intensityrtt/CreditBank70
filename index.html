@@ -592,8 +592,8 @@ window.APP_CONFIG = {
 
   // LocalStorage Keys
   STORAGE_KEYS: {
-    DRAFT_SURVEY: "cb_nan1_survey_draft_v1",
-    SUBMITTED_RECEIPT: "cb_nan1_last_receipt",
+    DRAFT_SURVEY: "cb_nan1_survey_draft_v2",
+    SUBMITTED_RECEIPT: "cb_nan1_last_receipt_v2",
     ADMIN_TOKEN: "cb_nan1_admin_token",
     GAS_URL: "CREDIT_BANK_GAS_URL"
   },
@@ -633,50 +633,88 @@ window.safeRenderIcons = function() {
 /* --- js/api-service.js --- */
 /**
  * API Service สำหรับติดต่อกับ Google Apps Script Server
- * รองรับทั้งการเชื่อมต่อจริง (Live Mode) และจำลองข้อมูล (Demo/Offline Mode)
+ * รองรับทั้งการเชื่อมต่อเซิร์ฟเวอร์ Google Apps Script และระบบจัดเก็บข้อมูลจริงในเครื่อง
  */
 window.ApiService = (function() {
-  var isDemoMode = false;
-  var demoSchools = [];
+  var SCHOOLS_STORAGE_KEY = "cb_nan1_schools_prod_v1";
+  var SUBMISSIONS_STORAGE_KEY = "cb_nan1_submissions_prod_v1";
+  var CLEANUP_FLAG_KEY = "cb_nan1_mock_purged_v1";
 
-  // เริ่มต้น Mock Data สำหรับ Demo Mode
-  function initDemoData() {
-    var savedSchools = localStorage.getItem("cb_nan1_mock_schools");
-    if (savedSchools) {
-      try {
-        demoSchools = JSON.parse(savedSchools);
-        return;
-      } catch (e) {}
-    }
+  var localSchools = [];
 
-    // สร้างข้อมูลตั้งต้น 34 โรงเรียน โดยสุ่มส่งแล้วบางส่วนให้เห็นตัวอย่างรายงาน
+  // ล้างข้อมูลจำลอง (Mock Data) เดิมออกทั้งหมด เพื่อให้ระบบพร้อมใช้งานจริง 100%
+  function purgeLegacyMockData() {
+    try {
+      localStorage.removeItem("cb_nan1_mock_schools");
+      localStorage.removeItem("cb_nan1_mock_submissions");
+      if (!localStorage.getItem(CLEANUP_FLAG_KEY)) {
+        localStorage.removeItem("cb_nan1_survey_draft_v1");
+        localStorage.removeItem("cb_nan1_last_receipt");
+        localStorage.setItem(CLEANUP_FLAG_KEY, "true");
+      }
+    } catch (e) {}
+  }
+
+  // สร้างรายชื่อตั้งต้น 34 โรงเรียน (สถานะเริ่มต้น: ยังไม่ส่งข้อมูลทั้งหมด 0 แห่ง)
+  function createCleanSchoolsList() {
     var master = window.MASTER_SCHOOLS_DATA || [];
-    demoSchools = master.map(function(s, index) {
-      var isSub = index < 8; // ให้ 8 โรงเรียนแรกมีข้อมูลส่งแล้วเป็นตัวอย่าง
+    return master.map(function(s) {
       return {
         id: s.id,
         name: s.name,
         code: s.code,
         district: s.district,
-        status: isSub ? "ส่งข้อมูลแล้ว" : "ยังไม่ส่งข้อมูล",
-        isSubmitted: isSub,
-        submittedAt: isSub ? "20/10/2569 09:30:" + (10 + index) : "-",
-        contactName: isSub ? "ครูผู้รับผิดชอบ " + s.name.replace("โรงเรียน", "") : "-",
-        contactPhone: isSub ? "081-234-56" + (10 + index) : "-",
+        status: "ยังไม่ส่งข้อมูล",
+        isSubmitted: false,
+        submittedAt: "-",
+        contactName: "-",
+        contactPhone: "-",
         size: s.defaultSize,
-        totalStudents: isSub ? 150 + (index * 20) : 0,
-        creditStudents: isSub ? 25 + (index * 5) : 0,
-        refId: isSub ? "CB70-20261020-00" + (index + 1) : "-"
+        totalStudents: 0,
+        creditStudents: 0,
+        refId: "-"
       };
     });
-    saveDemoSchools();
   }
 
-  function saveDemoSchools() {
-    localStorage.setItem("cb_nan1_mock_schools", JSON.stringify(demoSchools));
+  // เริ่มต้นข้อมูลโรงเรียนสำหรับใช้งานจริง
+  function initLocalData() {
+    purgeLegacyMockData();
+
+    var savedSchools = localStorage.getItem(SCHOOLS_STORAGE_KEY);
+    if (savedSchools) {
+      try {
+        var parsed = JSON.parse(savedSchools);
+        if (Array.isArray(parsed) && parsed.length === 34) {
+          // ซิงค์ชื่ออำเภอและรหัสกับ MASTER_SCHOOLS_DATA เสมอ
+          var masterMap = {};
+          (window.MASTER_SCHOOLS_DATA || []).forEach(function(m) {
+            masterMap[m.name] = m;
+          });
+          localSchools = parsed.map(function(item) {
+            var m = masterMap[item.name];
+            if (m) {
+              item.code = m.code;
+              item.district = m.district;
+            }
+            return item;
+          });
+          return;
+        }
+      } catch (e) {}
+    }
+
+    localSchools = createCleanSchoolsList();
+    saveLocalSchools();
   }
 
-  initDemoData();
+  function saveLocalSchools() {
+    try {
+      localStorage.setItem(SCHOOLS_STORAGE_KEY, JSON.stringify(localSchools));
+    } catch (e) {}
+  }
+
+  initLocalData();
 
   // ตรวจสอบสถานะการเชื่อมต่อ
   function getApiUrl() {
@@ -685,16 +723,16 @@ window.ApiService = (function() {
 
   function isLiveConnected() {
     var url = getApiUrl();
-    return url && url.startsWith("https://script.google.com");
+    return Boolean(url && url.startsWith("https://script.google.com"));
   }
 
   // เรียก API ไปยัง Google Apps Script
   async function request(action, method, data, params) {
     var url = getApiUrl();
     
-    // หากไม่มี URL หรือเกิดข้อผิดพลาด ให้ทำงานใน Demo Mode
+    // หากยังไม่ได้ตั้งค่า URL ของ Google Apps Script ให้ใช้ระบบจัดเก็บข้อมูลจริงในเครื่อง
     if (!url || !url.startsWith("https://script.google.com")) {
-      return handleMockRequest(action, data, params);
+      return handleLocalRequest(action, data, params);
     }
 
     try {
@@ -716,17 +754,17 @@ window.ApiService = (function() {
         return await postResp.json();
       }
     } catch (err) {
-      console.warn("API request failed, fallback to local handler:", err);
-      return handleMockRequest(action, data, params);
+      console.warn("API request failed, fallback to local storage handler:", err);
+      return handleLocalRequest(action, data, params);
     }
   }
 
-  // ตัวจัดการ Mock Request สำหรับทดสอบ
-  function handleMockRequest(action, data, params) {
+  // ตัวจัดการคำขอข้อมูลจากฐานข้อมูลในเครื่อง (ไม่มีข้อมูลจำลอง เริ่มต้นที่ 0 ทั้งหมด)
+  function handleLocalRequest(action, data, params) {
     switch (action) {
       case "getConfig":
-        var submitted = demoSchools.filter(function(s) { return s.isSubmitted; });
-        var totalCredit = submitted.reduce(function(acc, c) { return acc + c.creditStudents; }, 0);
+        var submitted = localSchools.filter(function(s) { return s.isSubmitted; });
+        var totalCredit = submitted.reduce(function(acc, c) { return acc + (Number(c.creditStudents) || 0); }, 0);
         return Promise.resolve({
           success: true,
           isOpen: localStorage.getItem("cb_nan1_is_open") !== "false",
@@ -736,21 +774,19 @@ window.ApiService = (function() {
           totalSchools: 34,
           submittedCount: submitted.length,
           pendingCount: 34 - submitted.length,
-          totalStudentsInCreditBank: totalCredit,
-          isMock: true
+          totalStudentsInCreditBank: totalCredit
         });
 
       case "getSchools":
         return Promise.resolve({
           success: true,
-          schools: demoSchools,
-          isMock: true
+          schools: localSchools
         });
 
       case "getPublicStats":
-        var subList = demoSchools.filter(function(s) { return s.isSubmitted; });
-        var pendList = demoSchools.filter(function(s) { return !s.isSubmitted; });
-        var totCred = subList.reduce(function(acc, c) { return acc + c.creditStudents; }, 0);
+        var subList = localSchools.filter(function(s) { return s.isSubmitted; });
+        var pendList = localSchools.filter(function(s) { return !s.isSubmitted; });
+        var totCred = subList.reduce(function(acc, c) { return acc + (Number(c.creditStudents) || 0); }, 0);
         return Promise.resolve({
           success: true,
           totalSchools: 34,
@@ -758,11 +794,17 @@ window.ApiService = (function() {
           pendingCount: pendList.length,
           percentage: Math.round((subList.length / 34) * 100),
           totalStudents: totCred,
-          schools: demoSchools,
-          isMock: true
+          schools: localSchools
         });
 
       case "submitSurvey":
+        if (localStorage.getItem("cb_nan1_is_open") === "false") {
+          return Promise.resolve({
+            success: false,
+            message: "ระบบสำรวจปิดรับการกรอกข้อมูลแล้ว กรุณาติดต่อผู้ดูแลระบบ สพป.น่าน เขต 1"
+          });
+        }
+
         var schoolName = data.schoolName;
         var fTot = (Number(data.format1_students) || 0) +
                    (Number(data.format2_students) || 0) +
@@ -774,27 +816,27 @@ window.ApiService = (function() {
         var dateStr = now.toLocaleDateString("th-TH") + " " + now.toLocaleTimeString("th-TH");
         var ref = "CB70-" + now.getFullYear() + ("0" + (now.getMonth() + 1)).slice(-2) + ("0" + now.getDate()).slice(-2) + "-" + Math.floor(100 + Math.random() * 900);
 
-        // อัปเดตใน demoSchools
-        for (var i = 0; i < demoSchools.length; i++) {
-          if (demoSchools[i].name === schoolName) {
-            demoSchools[i].status = "ส่งข้อมูลแล้ว";
-            demoSchools[i].isSubmitted = true;
-            demoSchools[i].submittedAt = dateStr;
-            demoSchools[i].contactName = data.respondentName || "-";
-            demoSchools[i].contactPhone = data.respondentPhone || "-";
-            demoSchools[i].size = data.schoolSize || demoSchools[i].size;
-            demoSchools[i].totalStudents = Number(data.studentTotal) || 0;
-            demoSchools[i].creditStudents = fTot;
-            demoSchools[i].refId = ref;
+        // อัปเดตสถานะโรงเรียนที่ส่งข้อมูลจริง
+        for (var i = 0; i < localSchools.length; i++) {
+          if (localSchools[i].name === schoolName) {
+            localSchools[i].status = "ส่งข้อมูลแล้ว";
+            localSchools[i].isSubmitted = true;
+            localSchools[i].submittedAt = dateStr;
+            localSchools[i].contactName = data.respondentName || "-";
+            localSchools[i].contactPhone = data.respondentPhone || "-";
+            localSchools[i].size = data.schoolSize || localSchools[i].size;
+            localSchools[i].totalStudents = Number(data.studentTotal) || 0;
+            localSchools[i].creditStudents = fTot;
+            localSchools[i].refId = ref;
             break;
           }
         }
-        saveDemoSchools();
+        saveLocalSchools();
 
-        // บันทึกคำตอบเต็มลงใน mock submissions
-        var savedSubmissions = JSON.parse(localStorage.getItem("cb_nan1_mock_submissions") || "[]");
+        // บันทึกคำตอบจริงลงในรายการส่งข้อมูล
+        var savedSubmissions = JSON.parse(localStorage.getItem(SUBMISSIONS_STORAGE_KEY) || "[]");
         savedSubmissions.push(Object.assign({}, data, { refId: ref, submittedAt: dateStr, formatsTotal: fTot }));
-        localStorage.setItem("cb_nan1_mock_submissions", JSON.stringify(savedSubmissions));
+        localStorage.setItem(SUBMISSIONS_STORAGE_KEY, JSON.stringify(savedSubmissions));
 
         return Promise.resolve({
           success: true,
@@ -802,8 +844,7 @@ window.ApiService = (function() {
           referenceId: ref,
           schoolName: schoolName,
           submittedAt: dateStr,
-          formatsTotal: fTot,
-          isMock: true
+          formatsTotal: fTot
         });
 
       case "adminLogin":
@@ -813,14 +854,13 @@ window.ApiService = (function() {
           return Promise.resolve({
             success: true,
             message: "เข้าสู่ระบบสำเร็จ",
-            token: "mock_token_" + Date.now(),
-            isMock: true
+            token: "admin_token_" + Date.now()
           });
         }
-        return Promise.resolve({ success: false, message: "รหัส PIN ไม่ถูกต้อง", isMock: true });
+        return Promise.resolve({ success: false, message: "รหัส PIN ไม่ถูกต้อง" });
 
       case "adminGetFullData":
-        return Promise.resolve(generateMockAdminData());
+        return Promise.resolve(calculateLocalAdminData());
 
       case "adminToggleSurvey":
         var targetState = (params && params.state === "open") || (data && (data.state === "open" || data.state === true));
@@ -828,34 +868,222 @@ window.ApiService = (function() {
         return Promise.resolve({
           success: true,
           isOpen: targetState,
-          message: targetState ? "เปิดรับแบบสำรวจเรียบร้อยแล้ว" : "ปิดรับแบบสำรวจเรียบร้อยแล้ว",
-          isMock: true
+          message: targetState ? "เปิดรับแบบสำรวจเรียบร้อยแล้ว" : "ปิดรับแบบสำรวจเรียบร้อยแล้ว"
         });
 
       case "adminResetSchool":
         var sName = data && data.schoolName;
-        for (var j = 0; j < demoSchools.length; j++) {
-          if (demoSchools[j].name === sName) {
-            demoSchools[j].status = "ยังไม่ส่งข้อมูล";
-            demoSchools[j].isSubmitted = false;
-            demoSchools[j].submittedAt = "-";
-            demoSchools[j].creditStudents = 0;
+        for (var j = 0; j < localSchools.length; j++) {
+          if (localSchools[j].name === sName) {
+            localSchools[j].status = "ยังไม่ส่งข้อมูล";
+            localSchools[j].isSubmitted = false;
+            localSchools[j].submittedAt = "-";
+            localSchools[j].contactName = "-";
+            localSchools[j].contactPhone = "-";
+            localSchools[j].totalStudents = 0;
+            localSchools[j].creditStudents = 0;
+            localSchools[j].refId = "-";
             break;
           }
         }
-        saveDemoSchools();
-        return Promise.resolve({ success: true, message: "รีเซ็ตข้อมูลโรงเรียนสำเร็จ", isMock: true });
+        saveLocalSchools();
+
+        // ลบรายการส่งของโรงเรียนนี้ออกจากคลังคำตอบด้วย
+        var currentSubs = JSON.parse(localStorage.getItem(SUBMISSIONS_STORAGE_KEY) || "[]");
+        var filteredSubs = currentSubs.filter(function(sub) { return sub.schoolName !== sName; });
+        localStorage.setItem(SUBMISSIONS_STORAGE_KEY, JSON.stringify(filteredSubs));
+
+        return Promise.resolve({ success: true, message: "รีเซ็ตข้อมูลโรงเรียน " + sName + " สำเร็จ" });
+
+      case "adminResetAll":
+        localSchools = createCleanSchoolsList();
+        saveLocalSchools();
+        localStorage.removeItem(SUBMISSIONS_STORAGE_KEY);
+        localStorage.removeItem(window.APP_CONFIG.STORAGE_KEYS.DRAFT_SURVEY);
+        localStorage.removeItem(window.APP_CONFIG.STORAGE_KEYS.SUBMITTED_RECEIPT);
+        return Promise.resolve({
+          success: true,
+          message: "ล้างข้อมูลการส่งทั้งหมดเรียบร้อยแล้ว ระบบพร้อมเริ่มต้นใช้งานจริง"
+        });
 
       default:
-        return Promise.resolve({ success: false, message: "Mock action not handled: " + action });
+        return Promise.resolve({ success: false, message: "Action not handled: " + action });
     }
   }
 
-  // สร้างข้อมูล Admin Mock ที่ครบถ้วนตรงกับ สพฐ.
-  function generateMockAdminData() {
-    var subList = demoSchools.filter(function(s) { return s.isSubmitted; });
-    var totCredit = subList.reduce(function(acc, c) { return acc + c.creditStudents; }, 0);
+  // คำนวณข้อมูลสถิติ Admin และรายงาน สพฐ. จากข้อมูลการส่งจริงเท่านั้น (ไม่มีการสุ่มหรือจำลองตัวเลข)
+  function calculateLocalAdminData() {
+    var subList = localSchools.filter(function(s) { return s.isSubmitted; });
+    var submittedNamesMap = {};
+    subList.forEach(function(s) { submittedNamesMap[s.name] = true; });
+
+    var totCredit = subList.reduce(function(acc, c) { return acc + (Number(c.creditStudents) || 0); }, 0);
     var subCount = subList.length;
+
+    var rawSubmissions = [];
+    try {
+      rawSubmissions = JSON.parse(localStorage.getItem(SUBMISSIONS_STORAGE_KEY) || "[]");
+    } catch (e) {
+      rawSubmissions = [];
+    }
+
+    // คัดเฉพาะคำตอบล่าสุดของโรงเรียนที่มีสถานะส่งข้อมูลแล้ว
+    var latestSubmissions = {};
+    for (var i = 0; i < rawSubmissions.length; i++) {
+      var sub = rawSubmissions[i];
+      if (sub && sub.schoolName && submittedNamesMap[sub.schoolName]) {
+        latestSubmissions[sub.schoolName] = sub;
+      }
+    }
+
+    var formats = [
+      { id: 1, name: "แบบในระบบการศึกษา", schoolsCount: 0, studentsCount: 0 },
+      { id: 2, name: "แบบไร้ห้องเรียน", schoolsCount: 0, studentsCount: 0 },
+      { id: 3, name: "แบบหลักสูตรต่อเนื่องเชื่อมโยง (CLC)", schoolsCount: 0, studentsCount: 0 },
+      { id: 4, name: "แบบเรียนล่วงหน้า/คู่ขนาน (Pre-degree)", schoolsCount: 0, studentsCount: 0 },
+      { id: 5, name: "แบบประสบการณ์", schoolsCount: 0, studentsCount: 0 }
+    ];
+
+    var projects = [
+      { id: 1, number: 1, name: "โครงการ 1 โรงเรียน 3 รูปแบบการศึกษา", title: "โครงการ 1 โรงเรียน 3 รูปแบบการศึกษา", schoolsCount: 0, studentsCount: 0 },
+      { id: 2, number: 2, name: "โครงการทวิศึกษา", title: "โครงการทวิศึกษา", schoolsCount: 0, studentsCount: 0 },
+      { id: 3, number: 3, name: "โครงการการพัฒนาหลักสูตรต่อเนื่องเชื่อมโยง (CLC)", title: "โครงการการพัฒนาหลักสูตรต่อเนื่องเชื่อมโยง (CLC)", schoolsCount: 0, studentsCount: 0 },
+      { id: 4, number: 4, name: "โครงการพัฒนาหลักสูตรตามมาตรฐานอาชีพ และ NQF", title: "โครงการพัฒนาหลักสูตรตามมาตรฐานอาชีพ และ NQF", schoolsCount: 0, studentsCount: 0 },
+      { id: 5, number: 5, name: "โครงการหลักสูตรสถานศึกษาฐานสมรรถนะในพื้นที่นวัตกรรมการศึกษา (Sandbox)", title: "โครงการหลักสูตรสถานศึกษาฐานสมรรถนะในพื้นที่นวัตกรรมการศึกษา (Sandbox)", schoolsCount: 0, studentsCount: 0 },
+      { id: 6, number: 6, name: "โครงการคลังรายวิชาและสมรรถนะย่อย (Micro-credentials)", title: "โครงการคลังรายวิชาและสมรรถนะย่อย (Micro-credentials)", schoolsCount: 0, studentsCount: 0 },
+      { id: 7, number: 7, name: "โครงการเรียนรู้จากใบประกาศ (Skill Certificate) และผลทดสอบมาตรฐาน", title: "โครงการเรียนรู้จากใบประกาศ (Skill Certificate) และผลทดสอบมาตรฐาน", schoolsCount: 0, studentsCount: 0 },
+      { id: 8, number: 8, name: "โครงการส่งเสริมผู้เรียนเรียนล่วงหน้าในหลักสูตรที่สูงขึ้น (Pre-degree)", title: "โครงการส่งเสริมผู้เรียนเรียนล่วงหน้าในหลักสูตรที่สูงขึ้น (Pre-degree)", schoolsCount: 0, studentsCount: 0 },
+      { id: 9, number: 9, name: "อื่น ๆ (ระบุ)", title: "อื่น ๆ (ระบุ)", schoolsCount: 0, studentsCount: 0, details: [] }
+    ];
+
+    var platformsStats = {
+      "แพลตฟอร์มระดับชาติ (เช่น ระบบ NDLP, แพลตฟอร์มของ สพฐ., Thai MOOC เป็นต้น)": 0,
+      "แพลตฟอร์มของสถาบันอุดมศึกษา/อาชีวศึกษา ที่ทำ MOU ร่วมกัน": 0,
+      "แพลตฟอร์มระดับสากลหรือเอกชน (เช่น Coursera, Google Classroom, Microsoft Teams)": 0,
+      "แพลตฟอร์มหรือ Learning Management System LMS ที่สถานศึกษาพัฒนาขึ้นเอง": 0,
+      "ยังไม่มีแพลตฟอร์มรองรับที่ชัดเจน": 0
+    };
+
+    var providersStats = {
+      "ศูนย์ฝึกอาชีพ / สถาบันพัฒนาฝีมือแรงงาน": 0,
+      "สถานประกอบการ / ภาคธุรกิจในพื้นที่": 0,
+      "ศูนย์การเรียนรู้ชุมชน / ปราชญ์ชาวบ้าน / แหล่งเรียนรู้ท้องถิ่น": 0,
+      "สถาบันภาษา / ศูนย์ทดสอบมาตรฐานสากล": 0,
+      "สถานศึกษาจัดการประเมินและรับรองด้วยตนเองทั้งหมด": 0
+    };
+
+    var regStats = {
+      "ได้รับการอนุมัติและประกาศขึ้นทะเบียนธนาคารหน่วยกิตจาก ศธจ. เรียบร้อยแล้ว": 0,
+      "สพท. ตรวจสอบ และเสนอขออนุมัติต่อสำนักงานศึกษาธิการจังหวัด (ศธจ.) แล้ว": 0,
+      "สถานศึกษาที่ดำเนินการระบบธนาคารหน่วยกิตฯ โดยอยู่ในกำกับของ สพท. แล้ว": 0,
+      "จัดทำข้อมูลความพร้อม (OCB-01) และยื่นคำร้อง (OCB-02) ต่อ สพท. แล้ว": 0,
+      "สถานศึกษาเป็นผู้ดำเนินการด้วยตนเอง โดยความร่วมมือ MOU กับหน่วยงานต่าง ๆ": 0,
+      "ยังไม่ได้เริ่มดำเนินการ / อยู่ระหว่างเตรียมการ": 0
+    };
+
+    var mouStats = {
+      "มีการทำ MOU ร่วมกับสถาบันอื่น พร้อมจัดทำตารางเทียบเคียงรายวิชา/สมรรถนะแล้ว": 0,
+      "มีการทำ MOU ร่วมกับสถาบันอื่น แต่ยังไม่มีตารางเทียบเคียงรายวิชา/สมรรถนะที่ชัดเจน": 0,
+      "อยู่ระหว่างการเจรจาหรือเตรียมการ": 0,
+      "ยังไม่มีการดำเนินการ": 0
+    };
+
+    var personnelStats = {
+      "มีคณะกรรมการดำเนินงาน ครูและบุคลากรมีความเข้าใจระเบียบและเกณฑ์การเทียบโอนเป็นอย่างดี": 0,
+      "มีผู้รับผิดชอบ แต่ยังต้องการการอบรม (Workshop) เพื่อสร้างความเข้าใจและจัดทำเครื่องมือประเมิน": 0
+    };
+
+    var digitalStats = {
+      "มีระบบฐานข้อมูลที่เสถียรและสามารถเชื่อมโยงกับหน่วยงานอื่นได้": 0,
+      "มีระบบบันทึกผลภายใน แต่ยังต้องการงบประมาณสนับสนุนด้านเทคโนโลยีและอุปกรณ์เพิ่มเติม": 0,
+      "ยังใช้ระบบกระดาษ (Manual) ขาดความพร้อมด้านโครงสร้างพื้นฐานดิจิทัลอย่างเร่งด่วน": 0
+    };
+
+    var budgetStats = {
+      "การพัฒนาหลักสูตร การเทียบสมรรถนะ และจัดทำตารางเทียบเคียงรายวิชา": 0,
+      "การพัฒนาเครื่องมือประเมินผลตามสภาพจริง (Authentic Assessment / Rubric)": 0,
+      "การจัดอบรมเชิงปฏิบัติการเพื่อพัฒนาทักษะครูและคณะกรรมการเทียบโอน": 0,
+      "การพัฒนาระบบสารสนเทศ ฐานข้อมูล และจัดหาอุปกรณ์ (Digital Readiness)": 0,
+      "การจัดกิจกรรมการเรียนรู้และพัฒนาทักษะวิชาชีพให้แก่ผู้เรียน": 0
+    };
+
+    var obstacleStats = {
+      "ขาดงบประมาณในการจัดกิจกรรมและพัฒนาระบบ": 0,
+      "ขาดความเข้าใจในการกำหนดผลลัพธ์การเรียนรู้ (Learning Outcome) และการเทียบโอน": 0,
+      "ภาระงานของครูมีมาก ทำให้การประเมินและติดตามผู้เรียนเป็นรายบุคคลทำได้ยาก": 0,
+      "ขาดแหล่งเรียนรู้หรือขาดความร่วมมือจากสถานประกอบการและชุมชน": 0
+    };
+
+    var schoolKeys = Object.keys(latestSubmissions);
+    for (var k = 0; k < schoolKeys.length; k++) {
+      var row = latestSubmissions[schoolKeys[k]];
+
+      // 5 รูปแบบ
+      for (var f = 0; f < 5; f++) {
+        var fStd = Number(row["format" + (f + 1) + "_students"]) || 0;
+        if (fStd > 0) {
+          formats[f].schoolsCount++;
+          formats[f].studentsCount += fStd;
+        }
+      }
+
+      // โครงการ 1-8
+      for (var p = 0; p < 8; p++) {
+        var pStd = Number(row["project" + (p + 1) + "_students"]) || 0;
+        if (pStd > 0) {
+          projects[p].schoolsCount++;
+          projects[p].studentsCount += pStd;
+        }
+      }
+
+      // โครงการ 9 อื่นๆ
+      var p9Std = Number(row.project9_students) || 0;
+      var p9Name = String(row.project9_name || "").trim();
+      if (p9Std > 0 || (p9Name && p9Name !== "-")) {
+        projects[8].schoolsCount++;
+        projects[8].studentsCount += p9Std;
+        if (p9Name && p9Name !== "-") {
+          projects[8].details.push(p9Name + " (" + p9Std + " คน)");
+        }
+      }
+
+      // ส่วนที่ 4: แพลตฟอร์ม
+      var plats = Array.isArray(row.platforms) ? row.platforms : [];
+      plats.forEach(function(pl) {
+        if (platformsStats[pl] !== undefined) platformsStats[pl]++;
+      });
+
+      // ส่วนที่ 4: แหล่งเรียนรู้
+      var provs = Array.isArray(row.learningProviders) ? row.learningProviders : [];
+      provs.forEach(function(pr) {
+        if (providersStats[pr] !== undefined) providersStats[pr]++;
+      });
+
+      // ส่วนที่ 5: ความพร้อม
+      if (row.registrationStatus && regStats[row.registrationStatus] !== undefined) {
+        regStats[row.registrationStatus]++;
+      }
+      if (row.mouStatus && mouStats[row.mouStatus] !== undefined) {
+        mouStats[row.mouStatus]++;
+      }
+      if (row.personnelReadiness && personnelStats[row.personnelReadiness] !== undefined) {
+        personnelStats[row.personnelReadiness]++;
+      }
+      if (row.digitalTechReadiness && digitalStats[row.digitalTechReadiness] !== undefined) {
+        digitalStats[row.digitalTechReadiness]++;
+      }
+
+      // ส่วนที่ 6: งบประมาณ & อุปสรรค
+      var bgs = Array.isArray(row.budgetFocus) ? row.budgetFocus : [];
+      bgs.forEach(function(b) {
+        if (budgetStats[b] !== undefined) budgetStats[b]++;
+      });
+
+      var obs = Array.isArray(row.obstacles) ? row.obstacles : [];
+      obs.forEach(function(o) {
+        if (obstacleStats[o] !== undefined) obstacleStats[o]++;
+      });
+    }
 
     return {
       success: true,
@@ -865,7 +1093,7 @@ window.ApiService = (function() {
         title: "ระบบสำรวจ Credit Bank สพป.น่าน เขต 1",
         areaOffice: "สำนักงานเขตพื้นที่การศึกษาประถมศึกษาน่าน เขต 1"
       },
-      schools: demoSchools,
+      schools: localSchools,
       submissionsCount: subCount,
       obecSummary: {
         part1_general: {
@@ -875,74 +1103,16 @@ window.ApiService = (function() {
           participatingSchoolsCount: subCount,
           totalStudentsInCreditBank: totCredit
         },
-        part2_formats: [
-          { id: 1, name: "แบบในระบบการศึกษา", schoolsCount: Math.min(subCount, 7), studentsCount: Math.round(totCredit * 0.35) },
-          { id: 2, name: "แบบไร้ห้องเรียน", schoolsCount: Math.min(subCount, 4), studentsCount: Math.round(totCredit * 0.18) },
-          { id: 3, name: "แบบหลักสูตรต่อเนื่องเชื่อมโยง (CLC)", schoolsCount: Math.min(subCount, 5), studentsCount: Math.round(totCredit * 0.22) },
-          { id: 4, name: "แบบเรียนล่วงหน้า/คู่ขนาน (Pre-degree)", schoolsCount: Math.min(subCount, 3), studentsCount: Math.round(totCredit * 0.15) },
-          { id: 5, name: "แบบประสบการณ์", schoolsCount: Math.min(subCount, 3), studentsCount: Math.round(totCredit * 0.10) }
-        ],
-        part3_projects: [
-          { id: 1, name: "โครงการ 1 โรงเรียน 3 รูปแบบการศึกษา", schoolsCount: Math.min(subCount, 6), studentsCount: Math.round(totCredit * 0.25) },
-          { id: 2, name: "โครงการทวิศึกษา", schoolsCount: Math.min(subCount, 4), studentsCount: Math.round(totCredit * 0.20) },
-          { id: 3, name: "โครงการการพัฒนาหลักสูตรต่อเนื่องเชื่อมโยง (CLC)", schoolsCount: Math.min(subCount, 5), studentsCount: Math.round(totCredit * 0.18) },
-          { id: 4, name: "โครงการพัฒนาหลักสูตรตามมาตรฐานอาชีพ และ NQF", schoolsCount: Math.min(subCount, 3), studentsCount: Math.round(totCredit * 0.12) },
-          { id: 5, name: "โครงการหลักสูตรสถานศึกษาฐานสมรรถนะในพื้นที่นวัตกรรมการศึกษา (Sandbox)", schoolsCount: Math.min(subCount, 2), studentsCount: Math.round(totCredit * 0.08) },
-          { id: 6, name: "โครงการคลังรายวิชาและสมรรถนะย่อย (Micro-credentials)", schoolsCount: Math.min(subCount, 4), studentsCount: Math.round(totCredit * 0.10) },
-          { id: 7, name: "โครงการเรียนรู้จากใบประกาศ (Skill Certificate) และผลทดสอบมาตรฐาน", schoolsCount: Math.min(subCount, 4), studentsCount: Math.round(totCredit * 0.14) },
-          { id: 8, name: "โครงการส่งเสริมผู้เรียนเรียนล่วงหน้าในหลักสูตรที่สูงขึ้น (Pre-degree)", schoolsCount: Math.min(subCount, 3), studentsCount: Math.round(totCredit * 0.10) },
-          { id: 9, name: "อื่น ๆ (ระบุ)", schoolsCount: 1, studentsCount: 12, details: ["โครงการห้องเรียนอาชีพท้องถิ่น (12 คน)"] }
-        ],
-        part4_platforms: {
-          "แพลตฟอร์มระดับชาติ (เช่น ระบบ NDLP, แพลตฟอร์มของ สพฐ., Thai MOOC เป็นต้น)": Math.min(subCount, 6),
-          "แพลตฟอร์มของสถาบันอุดมศึกษา/อาชีวศึกษา ที่ทำ MOU ร่วมกัน": Math.min(subCount, 4),
-          "แพลตฟอร์มระดับสากลหรือเอกชน (เช่น Coursera, Google Classroom, Microsoft Teams)": Math.min(subCount, 5),
-          "แพลตฟอร์มหรือ Learning Management System LMS ที่สถานศึกษาพัฒนาขึ้นเอง": Math.min(subCount, 2),
-          "ยังไม่มีแพลตฟอร์มรองรับที่ชัดเจน": Math.max(0, subCount - 6)
-        },
-        part4_providers: {
-          "ศูนย์ฝึกอาชีพ / สถาบันพัฒนาฝีมือแรงงาน": Math.min(subCount, 5),
-          "สถานประกอบการ / ภาคธุรกิจในพื้นที่": Math.min(subCount, 4),
-          "ศูนย์การเรียนรู้ชุมชน / ปราชญ์ชาวบ้าน / แหล่งเรียนรู้ท้องถิ่น": Math.min(subCount, 6),
-          "สถาบันภาษา / ศูนย์ทดสอบมาตรฐานสากล": Math.min(subCount, 2),
-          "สถานศึกษาจัดการประเมินและรับรองด้วยตนเองทั้งหมด": Math.min(subCount, 4)
-        },
-        part5_registration: {
-          "ได้รับการอนุมัติและประกาศขึ้นทะเบียนธนาคารหน่วยกิตจาก ศธจ. เรียบร้อยแล้ว": Math.min(subCount, 2),
-          "สพท. ตรวจสอบ และเสนอขออนุมัติต่อสำนักงานศึกษาธิการจังหวัด (ศธจ.) แล้ว": Math.min(subCount, 2),
-          "สถานศึกษาที่ดำเนินการระบบธนาคารหน่วยกิตฯ โดยอยู่ในกำกับของ สพท. แล้ว": Math.min(subCount, 2),
-          "จัดทำข้อมูลความพร้อม (OCB-01) และยื่นคำร้อง (OCB-02) ต่อ สพท. แล้ว": Math.min(subCount, 1),
-          "สถานศึกษาเป็นผู้ดำเนินการด้วยตนเอง โดยความร่วมมือ MOU กับหน่วยงานต่าง ๆ": 1,
-          "ยังไม่ได้เริ่มดำเนินการ / อยู่ระหว่างเตรียมการ": Math.max(0, subCount - 8)
-        },
-        part5_mou: {
-          "มีการทำ MOU ร่วมกับสถาบันอื่น พร้อมจัดทำตารางเทียบเคียงรายวิชา/สมรรถนะแล้ว": Math.min(subCount, 3),
-          "มีการทำ MOU ร่วมกับสถาบันอื่น แต่ยังไม่มีตารางเทียบเคียงรายวิชา/สมรรถนะที่ชัดเจน": Math.min(subCount, 3),
-          "อยู่ระหว่างการเจรจาหรือเตรียมการ": Math.min(subCount, 2),
-          "ยังไม่มีการดำเนินการ": Math.max(0, subCount - 8)
-        },
-        part5_personnel: {
-          "มีคณะกรรมการดำเนินงาน ครูและบุคลากรมีความเข้าใจระเบียบและเกณฑ์การเทียบโอนเป็นอย่างดี": Math.min(subCount, 3),
-          "มีผู้รับผิดชอบ แต่ยังต้องการการอบรม (Workshop) เพื่อสร้างความเข้าใจและจัดทำเครื่องมือประเมิน": Math.max(0, subCount - 3)
-        },
-        part5_digital: {
-          "มีระบบฐานข้อมูลที่เสถียรและสามารถเชื่อมโยงกับหน่วยงานอื่นได้": Math.min(subCount, 2),
-          "มีระบบบันทึกผลภายใน แต่ยังต้องการงบประมาณสนับสนุนด้านเทคโนโลยีและอุปกรณ์เพิ่มเติม": Math.min(subCount, 5),
-          "ยังใช้ระบบกระดาษ (Manual) ขาดความพร้อมด้านโครงสร้างพื้นฐานดิจิทัลอย่างเร่งด่วน": Math.max(0, subCount - 7)
-        },
-        part6_budget: {
-          "การพัฒนาหลักสูตร การเทียบสมรรถนะ และจัดทำตารางเทียบเคียงรายวิชา": Math.min(subCount, 7),
-          "การพัฒนาเครื่องมือประเมินผลตามสภาพจริง (Authentic Assessment / Rubric)": Math.min(subCount, 5),
-          "การจัดอบรมเชิงปฏิบัติการเพื่อพัฒนาทักษะครูและคณะกรรมการเทียบโอน": Math.min(subCount, 6),
-          "การพัฒนาระบบสารสนเทศ ฐานข้อมูล และจัดหาอุปกรณ์ (Digital Readiness)": Math.min(subCount, 6),
-          "การจัดกิจกรรมการเรียนรู้และพัฒนาทักษะวิชาชีพให้แก่ผู้เรียน": Math.min(subCount, 5)
-        },
-        part6_obstacles: {
-          "ขาดงบประมาณในการจัดกิจกรรมและพัฒนาระบบ": Math.min(subCount, 7),
-          "ขาดความเข้าใจในการกำหนดผลลัพธ์การเรียนรู้ (Learning Outcome) และการเทียบโอน": Math.min(subCount, 5),
-          "ภาระงานของครูมีมาก ทำให้การประเมินและติดตามผู้เรียนเป็นรายบุคคลทำได้ยาก": Math.min(subCount, 6),
-          "ขาดแหล่งเรียนรู้หรือขาดความร่วมมือจากสถานประกอบการและชุมชน": Math.min(subCount, 3)
-        }
+        part2_formats: formats,
+        part3_projects: projects,
+        part4_platforms: platformsStats,
+        part4_providers: providersStats,
+        part5_registration: regStats,
+        part5_mou: mouStats,
+        part5_personnel: personnelStats,
+        part5_digital: digitalStats,
+        part6_budget: budgetStats,
+        part6_obstacles: obstacleStats
       }
     };
   }
@@ -964,7 +1134,8 @@ window.ApiService = (function() {
     adminLogin: function(pin) { return request("adminLogin", "GET", null, { pin: pin }); },
     adminGetFullData: function(pin) { return request("adminGetFullData", "GET", null, { pin: pin }); },
     adminToggleSurvey: function(state, pin) { return request("adminToggleSurvey", "GET", null, { state: state ? "open" : "closed", pin: pin }); },
-    adminResetSchool: function(schoolName, pin) { return request("adminResetSchool", "POST", { schoolName: schoolName, pin: pin }); }
+    adminResetSchool: function(schoolName, pin) { return request("adminResetSchool", "POST", { schoolName: schoolName, pin: pin }); },
+    adminResetAll: function(pin) { return request("adminResetAll", "POST", { pin: pin }); }
   };
 })();
 
@@ -2717,14 +2888,19 @@ window.AdminPortal = (function() {
 
         <!-- รายการจัดการสถานศึกษา 34 แห่ง พร้อมปุ่มรีเซ็ต -->
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-          <div class="flex items-center justify-between">
+          <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 class="text-lg font-bold text-slate-800">จัดการข้อมูลสถานศึกษาเป้าหมาย (34 แห่ง)</h3>
               <p class="text-xs text-slate-500">สามารถตรวจสอบ หรือสั่งรีเซ็ตสถานะเพื่อให้โรงเรียนกรอกใหม่ได้</p>
             </div>
-            <button onclick="AdminPortal.exportRawSubmissionsCsv()" class="btn-secondary text-xs">
-              <i data-lucide="download" class="w-4 h-4"></i> ดาวน์โหลดข้อมูลดิบ (CSV)
-            </button>
+            <div class="flex items-center gap-2">
+              <button onclick="AdminPortal.confirmResetAllData()" class="btn-secondary text-xs text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
+                <i data-lucide="trash-2" class="w-4 h-4"></i> ล้างข้อมูลการส่งทั้งหมด (เริ่มต้นใหม่)
+              </button>
+              <button onclick="AdminPortal.exportRawSubmissionsCsv()" class="btn-secondary text-xs">
+                <i data-lucide="download" class="w-4 h-4"></i> ดาวน์โหลดข้อมูลดิบ (CSV)
+              </button>
+            </div>
           </div>
 
           <div class="overflow-x-auto">
@@ -2824,7 +3000,7 @@ window.AdminPortal = (function() {
     // 2. Chart Projects
     var ctxProj = document.getElementById("chart-projects");
     if (ctxProj) {
-      var pLabels = obec.part3_projects.map(function(p) { return "โครงการ " + p.number; });
+      var pLabels = obec.part3_projects.map(function(p) { return "โครงการ " + (p.number || p.id); });
       var pData = obec.part3_projects.map(function(p) { return p.studentsCount; });
       charts.projects = new window.Chart(ctxProj, {
         type: 'bar',
@@ -2933,6 +3109,23 @@ window.AdminPortal = (function() {
     }
   }
 
+  // ล้างข้อมูลการส่งทั้งหมด 34 โรงเรียนเพื่อเริ่มต้นใช้งานจริง
+  async function confirmResetAllData() {
+    if (!confirm("ยืนยันการล้างข้อมูลการส่งแบบสำรวจทั้งหมด? สถานศึกษาทั้ง 34 แห่งจะกลับสู่สถานะ 'ยังไม่ส่งข้อมูล' (0 แห่ง)")) return;
+    window.App.showToast("กำลังล้างข้อมูลทั้งหมด...", "info");
+    try {
+      var resp = await window.ApiService.adminResetAll(adminPin);
+      if (resp && resp.success) {
+        window.App.showToast(resp.message || "ล้างข้อมูลทั้งหมดเรียบร้อยแล้ว", "success");
+        await loadAdminData();
+      } else {
+        window.App.showToast(resp.message || "ไม่สามารถล้างข้อมูลได้", "error");
+      }
+    } catch (e) {
+      window.App.showToast("เกิดข้อผิดพลาด: " + e.message, "error");
+    }
+  }
+
   // ดาวน์โหลดข้อมูลดิบ CSV
   function exportRawSubmissionsCsv() {
     if (!adminData || !adminData.schools) return;
@@ -2972,6 +3165,7 @@ window.AdminPortal = (function() {
     logout: logout,
     toggleSurvey: toggleSurvey,
     confirmResetSchool: confirmResetSchool,
+    confirmResetAllData: confirmResetAllData,
     exportRawSubmissionsCsv: exportRawSubmissionsCsv,
     isLoggedIn: checkLoginStatus,
     getAdminNavHtml: getAdminNavHtml,
@@ -3164,7 +3358,7 @@ window.ObecReport = (function() {
                   <div class="p-3 rounded-lg border border-slate-200 bg-slate-50/60">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div class="text-sm font-semibold text-slate-800">
-                        ${p.number}. ${p.title}
+                        ${p.number || p.id}. ${p.title || p.name}
                         ${p.details && p.details.length > 0 ? `
                           <span class="text-xs text-slate-500 block">ระบุ: ${p.details.join(", ")}</span>
                         ` : ''}
@@ -3337,7 +3531,7 @@ window.ObecReport = (function() {
 ${obec.part2_formats.map(function(f) { return `${f.name}: ${f.schoolsCount} แห่ง, ${f.studentsCount} คน`; }).join("\n")}
 
 [9 โครงการขับเคลื่อน]
-${obec.part3_projects.map(function(p) { return `${p.title}: ${p.schoolsCount} แห่ง, ${p.studentsCount} คน`; }).join("\n")}
+${obec.part3_projects.map(function(p) { return `${p.title || p.name}: ${p.schoolsCount} แห่ง, ${p.studentsCount} คน`; }).join("\n")}
 `;
 
     if (navigator.clipboard) {
@@ -3407,15 +3601,12 @@ window.App = (function() {
     var badge = document.getElementById("system-status-pill");
     if (!badge) return;
 
-    var isLive = window.ApiService.isLiveConnected();
     var isOpen = config.isOpen !== false;
 
     badge.innerHTML = `
-      <div class="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${isOpen ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}">
+      <div class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${isOpen ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}">
         <span class="w-2 h-2 rounded-full ${isOpen ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}"></span>
         <span>${isOpen ? 'เปิดรับแบบสำรวจ' : 'ปิดรับแบบสำรวจ'}</span>
-        <span class="text-slate-400">|</span>
-        <span class="text-xs ${isLive ? 'text-blue-700 font-bold' : 'text-amber-700'}">${isLive ? '● Live Server' : '○ Standby / Demo'}</span>
       </div>
     `;
   }
