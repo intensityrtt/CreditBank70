@@ -3,8 +3,9 @@
  */
 window.APP_CONFIG = {
   // ค่าเริ่มต้น URL ของ Google Apps Script Web App
-  // สามารถเปลี่ยนผ่านหน้าต่างตั้งค่าในเว็บได้ทันที หรือซิงค์อัตโนมัติจาก Google Sheet Settings
-  GAS_API_URL: localStorage.getItem("CREDIT_BANK_GAS_URL") || "",
+  // เชื่อมต่อตรงกับฐานข้อมูล Google Sheet 1OX7wLdznfnRAvR0XkIoKXS7lD8TlWMMsE95thnsuIrU สำหรับทุกเครื่องทันที
+  DEFAULT_GAS_API_URL: "https://script.google.com/macros/s/AKfycbxbjcNtoGJHDH3HDN_3RjcVUJEOE07NRdU5v2qHjriKJdcmDYeJzY0lSDk1EuTPcdbO/exec",
+  GAS_API_URL: localStorage.getItem("CREDIT_BANK_GAS_URL") || "https://script.google.com/macros/s/AKfycbxbjcNtoGJHDH3HDN_3RjcVUJEOE07NRdU5v2qHjriKJdcmDYeJzY0lSDk1EuTPcdbO/exec",
 
   // รหัสและลิงก์ Google Sheet ฐานข้อมูลหลัก & Google Drive
   SHEET_ID: "1OX7wLdznfnRAvR0XkIoKXS7lD8TlWMMsE95thnsuIrU",

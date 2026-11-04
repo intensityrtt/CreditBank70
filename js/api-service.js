@@ -119,13 +119,15 @@ window.ApiService = (function() {
 
   initLocalData();
 
+  var DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbxbjcNtoGJHDH3HDN_3RjcVUJEOE07NRdU5v2qHjriKJdcmDYeJzY0lSDk1EuTPcdbO/exec";
+
   // ตรวจสอบสถานะการเชื่อมต่อ
   function getApiUrl() {
     var stored = "";
     try {
       stored = localStorage.getItem(window.APP_CONFIG.STORAGE_KEYS.GAS_URL) || "";
     } catch (e) {}
-    return (stored || (window.APP_CONFIG && window.APP_CONFIG.GAS_API_URL) || "").trim();
+    return (stored || (window.APP_CONFIG && window.APP_CONFIG.GAS_API_URL) || DEFAULT_GAS_URL).trim();
   }
 
   function setApiUrlInternal(url) {
