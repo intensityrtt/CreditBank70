@@ -1228,6 +1228,10 @@ window.SurveyForm = (function() {
     }
   }
 
+  // ลิงก์และ QR Code สำหรับศึกษาข้อมูลก่อนเริ่มทำแบบสำรวจ
+  var STUDY_DRIVE_URL = "https://drive.google.com/drive/folders/1z_3DqcCKYHIGiwvGwL3RtHJrzBPufWE0";
+  var STUDY_QR_DATA_URI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+gAAAPoAQMAAAB3bUanAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAGUExURQAAAP///6XZn90AAAAJcEhZcwAADsMAAA7DAcdvqGQAAAVPSURBVHja7d1BcuI6EABQUSxY/iNwFI4GN5vcJBwhy1QNE/2i4iC1JWMnKeZ/yOuNY4fwWtl1dVtK+b+MRKfT6XQ6nU6n0+l0Op1O///qr2ki9u8fOqS0CX91Kh/Zvd+VyzmOKa3ef3qb+uotnU6n0+l0Op1Opz+6vl6mb7+o7/MohodDZue1P13+dF3uduOU1oXdXi4x3uh0Op1Op9PpdDr9J+jn7zws0lfl7lN6VUzuQ0qRbeLUpDTENvwLmod0Op1Op9PpdDqdTr+BHmvYVigptU3BTKfT6XQ6nU6n0+n0v64P8ZomxkeHaDJb0el0Op1Op9PpdDr91nqMrj5EHB89NZnFNuB2/NV0Op1Op9PpdDqdTv++3o3YFNz1oN283g06nU6n0+l0Op1Op39dXx5VMRl3WWnagIvik/ppXl9/4uvodDqdTqfT6XQ6/W71WEUOxytU3cDDBYrF5MBW45zbUEWm96ru2Lt8RT/N6Ds6nU6n0+l0Op1O/yH6S2GHDCKbQm14mPBOxXt6vzxffjdEfEkvrn1TvEavTu7rrnZ30ddhfW90Op1Op9PpdDqd/pj6OeLbebGAayq3XO5S7+HgHS93H+zw8IOZ6EXGRR/CyX3f0Ls1LJ1Op9PpdDqdTqc/qL4uD7v6tqc/jfXU02PbcXMllzgwOtmSLMuscsntji90Op1Op9PpdDqdfrf6y5T+K+ffi/VVoz8tXnsK5WruDZrG7mO63OU8rm+PvX9BandgodPpdDqdTqfT6fS71V/m9diPm9RjI2752puz83Kuy8fItoctxFxiE3IbxLqwpdPpdDqdTqfT6fS71V8W668zejNQeZrX2zMXuieix7U3M6VVLnGmNGY2s8MMnU6n0+l0Op1Op9M/pZfT8s4Re4NFGCLe5TxuCjal7LWpTjqdTqfT6XQ6nU6nf1aPLwV2B00rIU28q1f1BlPvFcGpKpJOp9PpdDqdTqfT6Yv1nMeHLXQfdt8NTCGXstVLdeZCSWKcy230I51Op9PpdDqdTqc/ut52A0vEbmDOda02eYRep2Cs9bmpTjqdTqfT6XQ6nU6nX9dzEeI459RxB0OcQkpDrPKlHxfbgHliqnOBvlmsVzUsnU6n0+l0Op1Opz+uPjnVWXKp9seMUfRV7yPfmSltXhG8pq/pdDqdTqfT6XQ6/Qfp1SnkMcp5dVU3sDnEbh30IZez8NzrDXanOq/p+6A/zetxppROp9PpdDqdTqfTH1CPdVw11VkKuHaq83D5llO5NFOdMT70D6qz9nbCdN/Tu8Oky/QVnU6n0+l0Op1Op9+9/jKj7+b17fjyp3ykisVrr14KLC8MdnfnbFMaYhs+fWwf0ul0Op1Op9PpdPrd6i8z+m6Rvurpf76y9v140alAOcyN7sa5DFXkWxpH5xVBOp1Op9PpdDqdTqeP2nLX9H8u+rXo6m0SzUfeGq8kEddOp9PpdDqdTqfT6T9b34bfLdNf00Q0VWR8G7B6WJqCqQdVl3TlxAc6nU6n0+l0Op1Opy/Wmz1e2ofNjphxd85qq5fuYQtp/JBOp9PpdDqdTqfT6d/Tq4KxmeqszlyIdWOJuZnS1G7gSafT6XQ6nU6n0+n0W+lDrBuoiWtHL8RBUzqdTqfT6XQ6nU6n31aPdWP3zIUS7dl5TUp0Op1Op9PpdDqdTv+eHiPq69yJ2BQ8BXYMLT31oKtvFuvdGpZOp9PpdDqdTqfTH1HvRreOKzupTBZ3cUOVyHaryBl9Q6fT6XQ6nU6n0+n0Wp+LX+MHv5f8Vc7Pcx9YpN8s6HQ6nU6n0+l0Op1Op9PpU/EvgFc9mq1HF9QAAAAASUVORK5CYII=";
+
   // Render ฟอร์มทั้งหมด
   function renderForm() {
     var container = document.getElementById("survey-content");
@@ -1235,6 +1239,48 @@ window.SurveyForm = (function() {
 
     var html = `
       <div class="max-w-4xl mx-auto space-y-6">
+        <!-- กล่องศึกษาข้อมูลและแนวทาง Credit Bank ก่อนเริ่มทำแบบสำรวจ (QR Code + ปุ่มลิงก์ Google Drive) -->
+        <div class="bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 rounded-2xl p-5 sm:p-6 text-white shadow-lg border border-blue-700/60">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-5">
+            <div class="space-y-3 text-center sm:text-left flex-1">
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 border border-amber-300/40 text-amber-200 text-xs font-bold">
+                <i data-lucide="book-open" class="w-4 h-4 text-amber-300"></i>
+                <span>โปรดศึกษาข้อมูลก่อนเริ่มต้นกรอกแบบสำรวจ</span>
+              </div>
+              <h2 class="text-lg sm:text-xl font-bold text-white leading-snug">
+                เอกสารแนวทางการดำเนินงานระบบธนาคารหน่วยกิต (Credit Bank)
+              </h2>
+              <p class="text-xs sm:text-sm text-blue-100 leading-relaxed">
+                สถานศึกษาสามารถสแกน <strong>QR Code</strong> หรือคลิกที่ปุ่มด้านล่าง เพื่อเปิดดูคู่มือ แนวทางการเทียบโอน และเอกสารประกอบจาก Google Drive ก่อนเริ่มกรอกข้อมูลแบบสำรวจ
+              </p>
+              <div class="pt-1 flex flex-wrap items-center justify-center sm:justify-start gap-3">
+                <a href="${STUDY_DRIVE_URL}" target="_blank" rel="noopener noreferrer"
+                  class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold text-sm sm:text-base shadow-md hover:shadow-lg transition-all cursor-pointer">
+                  <i data-lucide="folder-open" class="w-5 h-5"></i>
+                  <span>คลิกเพื่อศึกษาข้อมูล (Google Drive)</span>
+                  <i data-lucide="external-link" class="w-4 h-4"></i>
+                </a>
+                <button type="button" onclick="SurveyForm.openImageViewer('qrStudy')"
+                  class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-medium border border-white/20 transition cursor-pointer">
+                  <i data-lucide="zoom-in" class="w-4 h-4"></i>
+                  <span>ขยายดู QR Code</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- กรอบแสดง QR Code -->
+            <div class="shrink-0 flex flex-col items-center bg-white p-3 rounded-xl shadow-md border-2 border-amber-300/80">
+              <img src="${STUDY_QR_DATA_URI}" alt="QR Code สำหรับศึกษาข้อมูล Credit Bank"
+                onclick="SurveyForm.openImageViewer('qrStudy')"
+                title="คลิกเพื่อขยายดู QR Code"
+                class="w-28 h-28 sm:w-32 sm:h-32 object-contain cursor-pointer hover:scale-105 transition-transform" />
+              <span class="text-[11px] font-bold text-slate-700 mt-1.5 flex items-center gap-1">
+                <i data-lucide="qr-code" class="w-3.5 h-3.5 text-blue-700"></i> สแกนเพื่อศึกษาข้อมูล
+              </span>
+            </div>
+          </div>
+        </div>
+
         <!-- แถบความคืบหน้า (Progress Steps) -->
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
           <div class="flex items-center justify-between mb-3 text-sm font-medium text-slate-500">
@@ -2081,13 +2127,18 @@ window.SurveyForm = (function() {
 
   // หน้าต่างดูภาพอินโฟกราฟิกแบบขยายเต็มจอ (Modal Image Viewer)
   function openImageViewer(imageType) {
+    var isQr = imageType === 'qrStudy';
     var isModels = imageType === 'models5';
-    var title = isModels 
-      ? 'แผนภาพ: 5 รูปแบบการเทียบโอนและระบบธนาคารหน่วยกิตสำหรับนักเรียน (สพฐ.)' 
-      : 'แผนภาพ: การขับเคลื่อนงานตามนโยบายและโครงการ Credit Bank 9 โครงการ (สพฐ.)';
-    var imgSrc = (window.SURVEY_IMAGES && window.SURVEY_IMAGES[imageType]) 
-      ? window.SURVEY_IMAGES[imageType] 
-      : (isModels ? 'images/credit_bank_5_models.jpg' : 'images/credit_bank_9_projects.jpg');
+    var title = isQr
+      ? 'QR Code: ศึกษาข้อมูลและเอกสารแนวทางการดำเนินงาน Credit Bank'
+      : (isModels 
+        ? 'แผนภาพ: 5 รูปแบบการเทียบโอนและระบบธนาคารหน่วยกิตสำหรับนักเรียน (สพฐ.)' 
+        : 'แผนภาพ: การขับเคลื่อนงานตามนโยบายและโครงการ Credit Bank 9 โครงการ (สพฐ.)');
+    var imgSrc = isQr
+      ? STUDY_QR_DATA_URI
+      : ((window.SURVEY_IMAGES && window.SURVEY_IMAGES[imageType]) 
+        ? window.SURVEY_IMAGES[imageType] 
+        : (isModels ? 'images/credit_bank_5_models.jpg' : 'images/credit_bank_9_projects.jpg'));
 
     var modalHtml = `
       <div id="image-viewer-modal" class="fixed inset-0 z-50 flex flex-col items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md animate-fade-in" onclick="if(event.target === this) SurveyForm.closeImageViewer();">
@@ -2102,13 +2153,16 @@ window.SurveyForm = (function() {
             </button>
           </div>
           <div class="p-2 sm:p-4 bg-slate-100 overflow-auto flex items-center justify-center min-h-[300px]">
-            <img src="${imgSrc}" alt="${title}" class="max-w-full max-h-[72vh] object-contain rounded-lg shadow-sm" />
+            <img src="${imgSrc}" alt="${title}" class="max-w-full max-h-[72vh] object-contain rounded-lg shadow-sm bg-white p-2" />
           </div>
-          <div class="px-5 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
-            <span>💡 สกัดจากเอกสารคู่มือ Credit Bank สำนักงานคณะกรรมการการศึกษาขั้นพื้นฐาน (สพฐ.)</span>
-            <button onclick="SurveyForm.closeImageViewer()" class="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-lg transition">
-              ปิดหน้าต่าง
-            </button>
+          <div class="px-5 py-3 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+            <span>${isQr ? '💡 สแกน QR Code ด้วยสมาร์ทโฟน หรือกดปุ่มเปิดลิงก์ Google Drive ด้านขวา' : '💡 สกัดจากเอกสารคู่มือ Credit Bank สำนักงานคณะกรรมการการศึกษาขั้นพื้นฐาน (สพฐ.)'}</span>
+            <div class="flex items-center gap-2">
+              ${isQr ? `<a href="${STUDY_DRIVE_URL}" target="_blank" rel="noopener noreferrer" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition flex items-center gap-1.5"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> คลิกเพื่อศึกษาข้อมูล</a>` : ''}
+              <button onclick="SurveyForm.closeImageViewer()" class="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-lg transition">
+                ปิดหน้าต่าง
+              </button>
+            </div>
           </div>
         </div>
       </div>
