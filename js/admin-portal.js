@@ -596,11 +596,102 @@ window.AdminPortal = (function() {
     }
   }
 
+  // รีเฟรชข้อมูลสดจาก Google Sheet
+  async function refreshAdminData() {
+    window.App.showToast("กำลังดึงข้อมูลล่าสุดจาก Google Sheet...", "info");
+    await loadAdminData();
+    window.App.showToast("ซิงค์ข้อมูลจาก Google Sheet เรียบร้อยแล้ว", "success");
+  }
+
+  // เปิดหน้าต่างดูรายละเอียดคำตอบของโรงเรียน
+  async function viewSchoolSubmission(schoolName) {
+    try {
+      var sub = (adminData && adminData.submissions && adminData.submissions[schoolName]) || null;
+      if (!sub && window.ApiService && typeof window.ApiService.getSchoolSubmission === "function") {
+        var resp = await window.ApiService.getSchoolSubmission(schoolName);
+        if (resp && resp.success && resp.data) {
+          sub = resp.data;
+        }
+      }
+      var schoolInfo = ((adminData && adminData.schools) || []).find(function(s) { return s.name === schoolName; }) || {};
+      var root = document.getElementById("modal-root");
+      if (!root) return;
+
+      var formatsList = [
+        { label: "รูปแบบที่ 1: แบบในระบบการศึกษา", val: sub ? (sub.format1_students || 0) : 0 },
+        { label: "รูปแบบที่ 2: แบบไร้ห้องเรียน", val: sub ? (sub.format2_students || 0) : 0 },
+        { label: "รูปแบบที่ 3: แบบต่อเนื่องเชื่อมโยง (CLC)", val: sub ? (sub.format3_students || 0) : 0 },
+        { label: "รูปแบบที่ 4: แบบเรียนล่วงหน้า/คู่ขนาน (Pre-degree)", val: sub ? (sub.format4_students || 0) : 0 },
+        { label: "รูปแบบที่ 5: แบบประสบการณ์", val: sub ? (sub.format5_students || 0) : 0 }
+      ];
+
+      var modalHtml = `
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-fade-in" onclick="if(event.target===this) document.getElementById('modal-root').innerHTML='';">
+          <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200">
+            <div class="bg-gradient-to-r from-slate-900 to-blue-950 text-white px-6 py-4 flex items-center justify-between">
+              <div>
+                <span class="text-xs text-amber-300 font-bold uppercase">รายละเอียดข้อมูลที่สถานศึกษารายงาน</span>
+                <h3 class="text-lg font-bold text-white">${schoolName}</h3>
+              </div>
+              <button onclick="document.getElementById('modal-root').innerHTML=''" class="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10">
+                <i data-lucide="x" class="w-5 h-5"></i>
+              </button>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-4 text-sm text-slate-700">
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
+                <div><span class="text-slate-400 block">รหัส 10 หลัก:</span><strong class="text-slate-800 font-mono">${schoolInfo.code || (sub && sub.schoolCode) || '-'}</strong></div>
+                <div><span class="text-slate-400 block">ขนาดสถานศึกษา:</span><strong class="text-slate-800">${(sub && sub.schoolSize) || schoolInfo.size || '-'}</strong></div>
+                <div><span class="text-slate-400 block">วันเวลาที่ส่ง:</span><strong class="text-slate-800">${schoolInfo.submittedAt || (sub && sub.submittedAt) || '-'}</strong></div>
+                <div><span class="text-slate-400 block">ผู้รับผิดชอบ:</span><strong class="text-slate-800">${schoolInfo.contactName || (sub && sub.respondentName) || '-'}</strong></div>
+                <div><span class="text-slate-400 block">เบอร์โทรศัพท์:</span><strong class="text-slate-800">${schoolInfo.contactPhone || (sub && sub.respondentPhone) || '-'}</strong></div>
+                <div><span class="text-slate-400 block">รหัสอ้างอิง:</span><strong class="text-blue-700 font-mono">${schoolInfo.refId || (sub && sub.refId) || '-'}</strong></div>
+                <div><span class="text-slate-400 block">นักเรียนทั้งหมดในโรงเรียน:</span><strong class="text-slate-900 text-sm">${schoolInfo.totalStudents || (sub && sub.studentTotal) || 0} คน</strong></div>
+                <div><span class="text-slate-400 block">ผู้เรียนสะสมหน่วยกิต:</span><strong class="text-emerald-700 text-sm">${schoolInfo.creditStudents || (sub && sub.formatsTotal) || 0} คน</strong></div>
+              </div>
+
+              ${sub ? `
+                <div class="space-y-2">
+                  <div class="font-bold text-slate-800 border-b border-slate-100 pb-1">ส่วนที่ 2: ผู้เรียนตามรูปแบบการเทียบโอน 5 รูปแบบ</div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    ${formatsList.map(function(f) {
+                      return `<div class="flex justify-between p-2 rounded bg-slate-50 border border-slate-100"><span>${f.label}</span><strong class="text-blue-700">${f.val} คน</strong></div>`;
+                    }).join("")}
+                  </div>
+                </div>
+
+                <div class="space-y-2 text-xs">
+                  <div class="font-bold text-sm text-slate-800 border-b border-slate-100 pb-1">ส่วนที่ 4 - 6: ความพร้อมและปัญหาอุปสรรค</div>
+                  <div><strong>สถานะการขึ้นทะเบียน:</strong> ${sub.registrationStatus || '-'}</div>
+                  <div><strong>เครือข่ายความร่วมมือ (MOU):</strong> ${sub.mouStatus || '-'}</div>
+                  <div><strong>ความพร้อมบุคลากร:</strong> ${sub.personnelReadiness || '-'}</div>
+                  <div><strong>ความพร้อมดิจิทัล:</strong> ${sub.digitalTechReadiness || '-'}</div>
+                  <div><strong>แพลตฟอร์มที่ใช้:</strong> ${Array.isArray(sub.platforms) && sub.platforms.length ? sub.platforms.join(", ") : '-'}</div>
+                  <div><strong>แหล่งเรียนรู้เทียบโอน:</strong> ${Array.isArray(sub.learningProviders) && sub.learningProviders.length ? sub.learningProviders.join(", ") : '-'}</div>
+                  <div><strong>การมุ่งเน้นงบประมาณ:</strong> ${Array.isArray(sub.budgetFocus) && sub.budgetFocus.length ? sub.budgetFocus.join(", ") : '-'}</div>
+                  <div><strong>ปัญหาและอุปสรรค:</strong> ${Array.isArray(sub.obstacles) && sub.obstacles.length ? sub.obstacles.join(", ") : '-'} ${sub.obstaclesOther && sub.obstaclesOther !== '-' ? '(' + sub.obstaclesOther + ')' : ''}</div>
+                </div>
+              ` : `
+                <div class="p-4 bg-amber-50 text-amber-800 rounded-xl text-xs">แสดงข้อมูลสรุปจากแผ่นงาน Schools เรียบร้อยแล้ว</div>
+              `}
+            </div>
+            <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-end">
+              <button onclick="document.getElementById('modal-root').innerHTML=''" class="btn-secondary text-xs py-2 px-4">ปิดหน้าต่าง</button>
+            </div>
+          </div>
+        </div>
+      `;
+      root.innerHTML = modalHtml;
+      if (window.safeRenderIcons) window.safeRenderIcons();
+    } catch (e) {
+      window.App.showToast("ไม่สามารถเปิดรายละเอียดได้: " + e.message, "error");
+    }
+  }
+
   // ดาวน์โหลดข้อมูลดิบ CSV
   function exportRawSubmissionsCsv() {
     if (!adminData || !adminData.schools) return;
     var rows = [
-      ["ลำดับ", "ชื่อสถานศึกษา", "รหัส 10 หลัก", "อำเภอ", "สถานะ", "วันเวลาที่ส่ง", "ผู้รับผิดชอบ", "เบอร์โทร", "ผู้เรียนสะสมหน่วยกิต (คน)"]
+      ["ลำดับ", "ชื่อสถานศึกษา", "รหัส 10 หลัก", "อำเภอ", "สถานะ", "วันเวลาที่ส่ง", "ผู้รับผิดชอบ", "เบอร์โทร", "นักเรียนทั้งหมด (คน)", "ผู้เรียนสะสมหน่วยกิต (คน)"]
     ];
     adminData.schools.forEach(function(s, idx) {
       rows.push([
@@ -612,6 +703,7 @@ window.AdminPortal = (function() {
         '"' + s.submittedAt + '"',
         '"' + (s.contactName || "") + '"',
         "'" + (s.contactPhone || ""),
+        s.totalStudents || 0,
         s.creditStudents || 0
       ]);
     });
@@ -633,6 +725,8 @@ window.AdminPortal = (function() {
     renderLogin: renderLogin,
     handleLogin: handleLogin,
     logout: logout,
+    refreshAdminData: refreshAdminData,
+    viewSchoolSubmission: viewSchoolSubmission,
     toggleSurvey: toggleSurvey,
     confirmResetSchool: confirmResetSchool,
     confirmResetAllData: confirmResetAllData,

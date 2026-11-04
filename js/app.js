@@ -242,9 +242,14 @@ window.App = (function() {
     var input = document.getElementById("input_gas_url");
     if (input) {
       window.ApiService.setApiUrl(input.value.trim());
-      showToast("บันทึกการตั้งค่า URL เรียบร้อยแล้ว", "success");
+      showToast("บันทึกและซิงค์การตั้งค่า URL กับ Google Sheet เรียบร้อยแล้ว", "success");
       closeSettingsModal();
       checkSystemStatus();
+      if (activeTab === "admin" && window.AdminPortal && typeof window.AdminPortal.refreshAdminData === "function") {
+        window.AdminPortal.refreshAdminData();
+      } else if (activeTab === "tracker" && window.TrackerView && typeof window.TrackerView.refreshData === "function") {
+        window.TrackerView.refreshData();
+      }
     }
   }
 

@@ -506,13 +506,23 @@ function handleSurveySubmission(payload) {
   var thaiDateStr = Utilities.formatDate(now, "Asia/Bangkok", "dd/MM/yyyy HH:mm:ss");
   var refId = "CB70-" + Utilities.formatDate(now, "Asia/Bangkok", "yyyyMMdd") + "-" + ("000" + Math.floor(Math.random() * 1000)).slice(-3);
 
-  // คำนวณผลรวม 5 รูปแบบ
+  // คำนวณผลรวม 5 รูปแบบ และ 9 โครงการ
   var f1 = Number(payload.format1_students) || 0;
   var f2 = Number(payload.format2_students) || 0;
   var f3 = Number(payload.format3_students) || 0;
   var f4 = Number(payload.format4_students) || 0;
   var f5 = Number(payload.format5_students) || 0;
-  var formatsTotal = f1 + f2 + f3 + f4 + f5;
+  var sumFormats = f1 + f2 + f3 + f4 + f5;
+  var sumProjects = (Number(payload.project1_students) || 0) +
+                    (Number(payload.project2_students) || 0) +
+                    (Number(payload.project3_students) || 0) +
+                    (Number(payload.project4_students) || 0) +
+                    (Number(payload.project5_students) || 0) +
+                    (Number(payload.project6_students) || 0) +
+                    (Number(payload.project7_students) || 0) +
+                    (Number(payload.project8_students) || 0) +
+                    (Number(payload.project9_students) || 0);
+  var formatsTotal = sumFormats > 0 ? sumFormats : sumProjects;
 
   var rowData = [
     thaiDateStr,
@@ -998,11 +1008,19 @@ function updateSettings(newSettings) {
   var ss = getSpreadsheet();
   var sheet = ss.getSheetByName("Settings");
   var data = sheet.getDataRange().getValues();
+  var updatedKeys = {};
 
   for (var i = 1; i < data.length; i++) {
     var key = data[i][0];
     if (newSettings[key] !== undefined) {
       sheet.getRange(i + 1, 2).setValue(String(newSettings[key]));
+      updatedKeys[key] = true;
+    }
+  }
+
+  for (var newKey in newSettings) {
+    if (!updatedKeys[newKey] && newSettings[newKey] !== undefined) {
+      sheet.appendRow([newKey, String(newSettings[newKey]), "Auto-synced setting"]);
     }
   }
 
