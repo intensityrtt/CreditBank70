@@ -628,6 +628,20 @@ window.ApiService = (function() {
             if (directData.submissionsCount >= (json.submissionsCount || 0)) {
               return directData;
             }
+            if (Array.isArray(json.schools)) {
+              var mMap = {};
+              (window.MASTER_SCHOOLS_DATA || []).forEach(function(m) { mMap[m.name] = m; });
+              json.schools = json.schools.map(function(s) {
+                if (mMap[s.name]) {
+                  s.district = mMap[s.name].district;
+                  s.code = mMap[s.name].code;
+                }
+                return s;
+              });
+            }
+            if (json.settings && json.settings.title) {
+              json.settings.title = cleanTitleText(json.settings.title);
+            }
             return json;
           }
           if (action === "getSchools" && json && json.success) {
