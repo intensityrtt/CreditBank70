@@ -3,10 +3,11 @@
  */
 window.APP_CONFIG = {
   // ค่าเริ่มต้น URL ของ Google Apps Script Web App
-  // สามารถเปลี่ยนผ่านหน้าต่างตั้งค่าในเว็บได้ทันที หรือแก้ไขที่นี่
+  // สามารถเปลี่ยนผ่านหน้าต่างตั้งค่าในเว็บได้ทันที หรือซิงค์อัตโนมัติจาก Google Sheet Settings
   GAS_API_URL: localStorage.getItem("CREDIT_BANK_GAS_URL") || "",
 
-  // Google Sheet & Drive Links
+  // รหัสและลิงก์ Google Sheet ฐานข้อมูลหลัก & Google Drive
+  SHEET_ID: "1OX7wLdznfnRAvR0XkIoKXS7lD8TlWMMsE95thnsuIrU",
   SHEET_URL: "https://docs.google.com/spreadsheets/d/1OX7wLdznfnRAvR0XkIoKXS7lD8TlWMMsE95thnsuIrU/edit?usp=drive_link",
   DRIVE_FOLDER_URL: "https://drive.google.com/drive/folders/1CVEw_Ux3HWjkYwHQQFoPU6MZjX_pY6mL?usp=drive_link",
 
