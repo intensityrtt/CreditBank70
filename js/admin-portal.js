@@ -198,6 +198,11 @@ window.AdminPortal = (function() {
 
           <!-- ปุ่มควบคุมเปิด-ปิด และปุ่มรายงาน สพฐ. -->
           <div class="flex flex-wrap items-center gap-2.5">
+            <!-- ปุ่มรีเฟรชดึงข้อมูลสดจาก Google Sheet -->
+            <button onclick="AdminPortal.refreshAdminData()" class="btn-secondary text-sm bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i> ดึงข้อมูลล่าสุดจาก Sheet
+            </button>
+
             <!-- ปุ่มสวิตช์เปิด/ปิด ระบบ -->
             <button onclick="AdminPortal.toggleSurvey(${!isOpen})" 
               class="btn-secondary text-sm ${isOpen ? 'hover:bg-red-50 hover:text-red-700' : 'hover:bg-emerald-50 hover:text-emerald-700'}">
@@ -220,12 +225,24 @@ window.AdminPortal = (function() {
         <!-- แถบเครื่องมือและแหล่งจัดเก็บข้อมูล (เฉพาะ Admin เท่านั้น) -->
         <div class="bg-gradient-to-r from-slate-900 to-blue-950 text-white p-5 rounded-2xl shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div class="space-y-1">
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
               <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
               <span class="text-xs font-bold text-amber-300 uppercase tracking-wider">Admin Cloud Resources</span>
+              <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[11px] font-mono">
+                Sheet ID: ${window.APP_CONFIG.SHEET_ID || '1OX7wLdznfnRAvR0XkIoKXS7lD8TlWMMsE95thnsuIrU'}
+              </span>
+              ${window.ApiService.isLiveConnected() ? `
+                <span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-200 border border-blue-400/30 text-[11px]">
+                  ● เชื่อมต่อ Web App API แล้ว
+                </span>
+              ` : `
+                <span onclick="App.openSettingsModal()" class="px-2 py-0.5 rounded bg-amber-500/30 text-amber-200 border border-amber-400/50 text-[11px] cursor-pointer hover:bg-amber-500/40">
+                  ⚠️ คลิกตั้งค่า Web App URL เพื่อบันทึกข้อมูลจากทุกเครื่องลง Sheet
+                </span>
+              `}
             </div>
-            <h3 class="text-base font-bold text-white">คลังข้อมูลและเอกสารส่วนกลาง (เฉพาะผู้ดูแลระบบ)</h3>
-            <p class="text-xs text-slate-300">เชื่อมต่อ Google Sheets ฐานข้อมูล และ Google Drive ที่ได้รับการปกป้อง</p>
+            <h3 class="text-base font-bold text-white">คลังข้อมูลและเอกสารส่วนกลาง (ซิงค์ข้อมูลสดจาก Google Sheet อัตโนมัติ)</h3>
+            <p class="text-xs text-slate-300">ดึงข้อมูลแบบเรียลไทม์จาก Google Sheet (Settings, Schools, Submissions) และ Google Drive</p>
           </div>
 
           <div class="flex flex-wrap items-center gap-2.5">
@@ -354,6 +371,7 @@ window.AdminPortal = (function() {
                   <th class="py-3 px-3">ชื่อโรงเรียน</th>
                   <th class="py-3 px-3">ผู้รับผิดชอบ / โทร</th>
                   <th class="py-3 px-3 text-center">สถานะ</th>
+                  <th class="py-3 px-3 text-center">นร.ทั้งหมด</th>
                   <th class="py-3 px-3 text-center">นร.สะสม</th>
                   <th class="py-3 px-3">วันเวลาที่ส่ง</th>
                   <th class="py-3 px-3 text-center">จัดการ</th>
@@ -366,7 +384,7 @@ window.AdminPortal = (function() {
                       <td class="py-2.5 px-3 text-center text-xs text-slate-400">${idx + 1}</td>
                       <td class="py-2.5 px-3 font-semibold text-slate-800">
                         ${sc.name}
-                        <span class="text-xs font-normal text-slate-400 block">${sc.code}</span>
+                        <span class="text-xs font-normal text-slate-400 block">${sc.code} • อ.${sc.district || '-'}</span>
                       </td>
                       <td class="py-2.5 px-3 text-xs">
                         <div>${sc.contactName || '-'}</div>
@@ -377,16 +395,25 @@ window.AdminPortal = (function() {
                           ${sc.status}
                         </span>
                       </td>
+                      <td class="py-2.5 px-3 text-center font-semibold text-slate-700">
+                        ${sc.isSubmitted ? (sc.totalStudents || 0) : '-'}
+                      </td>
                       <td class="py-2.5 px-3 text-center font-bold text-blue-700">
-                        ${sc.isSubmitted ? sc.creditStudents : '-'}
+                        ${sc.isSubmitted ? (sc.creditStudents || 0) : '-'}
                       </td>
                       <td class="py-2.5 px-3 text-xs text-slate-500">${sc.submittedAt || '-'}</td>
                       <td class="py-2.5 px-3 text-center">
                         ${sc.isSubmitted ? `
-                          <button onclick="AdminPortal.confirmResetSchool('${sc.name}')" 
-                            class="text-xs text-red-600 hover:text-red-800 font-semibold p-1 hover:bg-red-50 rounded">
-                            รีเซ็ตให้ส่งใหม่
-                          </button>
+                          <div class="flex items-center justify-center gap-1.5">
+                            <button onclick="AdminPortal.viewSchoolSubmission('${sc.name}')" 
+                              class="text-xs text-blue-600 hover:text-blue-800 font-semibold px-2 py-1 bg-blue-50 hover:bg-blue-100 rounded transition">
+                              ดูคำตอบ
+                            </button>
+                            <button onclick="AdminPortal.confirmResetSchool('${sc.name}')" 
+                              class="text-xs text-red-600 hover:text-red-800 font-semibold px-2 py-1 hover:bg-red-50 rounded transition">
+                              รีเซ็ตให้ส่งใหม่
+                            </button>
+                          </div>
                         ` : `
                           <span class="text-xs text-slate-400">-</span>
                         `}
