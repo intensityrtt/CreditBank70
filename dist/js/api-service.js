@@ -119,13 +119,15 @@ window.ApiService = (function() {
 
   initLocalData();
 
+  var DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbxbjcNtoGJHDH3HDN_3RjcVUJEOE07NRdU5v2qHjriKJdcmDYeJzY0lSDk1EuTPcdbO/exec";
+
   // ตรวจสอบสถานะการเชื่อมต่อ
   function getApiUrl() {
     var stored = "";
     try {
       stored = localStorage.getItem(window.APP_CONFIG.STORAGE_KEYS.GAS_URL) || "";
     } catch (e) {}
-    return (stored || (window.APP_CONFIG && window.APP_CONFIG.GAS_API_URL) || "").trim();
+    return (stored || (window.APP_CONFIG && window.APP_CONFIG.GAS_API_URL) || DEFAULT_GAS_URL).trim();
   }
 
   function setApiUrlInternal(url) {
@@ -625,6 +627,20 @@ window.ApiService = (function() {
             var directData = calculateLocalAdminData();
             if (directData.submissionsCount >= (json.submissionsCount || 0)) {
               return directData;
+            }
+            if (Array.isArray(json.schools)) {
+              var mMap = {};
+              (window.MASTER_SCHOOLS_DATA || []).forEach(function(m) { mMap[m.name] = m; });
+              json.schools = json.schools.map(function(s) {
+                if (mMap[s.name]) {
+                  s.district = mMap[s.name].district;
+                  s.code = mMap[s.name].code;
+                }
+                return s;
+              });
+            }
+            if (json.settings && json.settings.title) {
+              json.settings.title = cleanTitleText(json.settings.title);
             }
             return json;
           }
